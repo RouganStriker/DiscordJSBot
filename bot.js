@@ -63,8 +63,7 @@ bot.on('ready', () => {
 
 bot.on('message', message => {
   if (message.content.match(/^!help$/i)) {
-    var helpText = "```";
-
+    message.channel.sendMessage("```!help Display this message```");
   }
 });
 
