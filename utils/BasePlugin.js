@@ -26,7 +26,7 @@ class BasePlugin {
      */
     callCommand(message) {
       for (var command in this.commandMapping) {
-        if message.content.match(command) {
+        if (message.content.match(command)) {
           this.commandMapping[command](message);
           break;
         }
