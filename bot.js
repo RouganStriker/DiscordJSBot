@@ -1,5 +1,7 @@
 require('log-timestamp');
 
+const fs = require('fs');
+const path_module = require('path');
 const Discord = require('discord.js');
 const BasePlugin = require('./utils/BasePlugin');
 const bot = new Discord.Client();
@@ -41,7 +43,7 @@ const LoadPlugins = () => {
           // Initialize plugin
           plugin_holder[files[i]] = plugin(bot);
         } catch(e) {
-          console.log("Failed to load " + files[i] ". Reason : " + e);
+          console.log("Failed to load " + files[i] + ". Reason : " + e);
           continue;
         }
 
