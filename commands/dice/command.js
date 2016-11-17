@@ -1,8 +1,8 @@
-roll(message, args) {
+const roll = (message, args) => {
   return this.getRandomInt(6);
 }
 
-getRandomInt(max) {
+const getRandomInt = (max) => {
   return Math.floor(Math.random() * max + 1);
 }
 
