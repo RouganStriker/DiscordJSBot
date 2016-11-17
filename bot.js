@@ -15,6 +15,8 @@ const commands_dir = path_module.join(__dirname, 'commands');
 const commandMgr = new CommandManager(client);
 const loadedPlugins = [];
 
+const hasLoaded = false;
+
 const loader = (directory, fileName, callback) => {
   // Navigates the directory and looks for all occurrences of fileName in the subdirectories
 
@@ -69,6 +71,13 @@ const loadPlugins = () => {
 
 client.on('ready', () => {
   console.log("Discord Bot is ready.");
+
+  if (hasLoaded) {
+    // Prevent reloading of commands and plugins when client re-connects
+    return;
+  }
+
+  hasLoaded = true;
 
   loadCommands();
   loadPlugins();
