@@ -48,6 +48,8 @@ const loadCommands = () => {
   loader(commands_dir, 'command.js', (command_path) => {
     command = require(command_path);
     commandMgr.registerCommand(command);
+
+    console.log("Loaded command from " + command_path);
   });
 };
 
@@ -60,18 +62,16 @@ const loadPlugins = () => {
     const newPlugin = new plugin(client);
     commandMgr.registerPluginCommands(newPlugin.getCommands());
     loadedPlugins.push(newPlugin);
+
+    console.log("Loaded plugin from " + plugin_path + " with " + newPlugin.getCommands().length + " commands.");
   });
 };
 
 client.on('ready', () => {
   console.log("Discord Bot is ready.");
 
-  // Load commands
   loadCommands();
-
   loadPlugins();
-
-  console.log("Loaded " + Object.keys(commandMgr.commands).length + " commands");
 });
 
 client.on('reconnecting', () => {

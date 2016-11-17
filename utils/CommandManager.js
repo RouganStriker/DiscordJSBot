@@ -17,6 +17,10 @@ class CommandManager {
     this.client.on('message', this.handleMessage.bind(this));
   }
 
+  getNumCommands() {
+    return Object.keys(this.commands).length
+  }
+
   registerCommand(command) {
     if (command.name in command) {
       throw new Error("Attempted to register duplicate command: " + command.name);
