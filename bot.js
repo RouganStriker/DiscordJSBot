@@ -15,7 +15,7 @@ const commands_dir = path_module.join(__dirname, 'commands');
 const commandMgr = new CommandManager(client);
 const loadedPlugins = [];
 
-const hasLoaded = false;
+let hasLoaded = false;
 
 const loader = (directory, fileName, callback) => {
   // Navigates the directory and looks for all occurrences of fileName in the subdirectories
