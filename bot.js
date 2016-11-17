@@ -70,6 +70,8 @@ client.on('ready', () => {
   loadCommands();
 
   loadPlugins();
+
+  console.log("Loaded " + Object.keys(commandMgr.commands).length + " commands");
 });
 
 client.on('reconnecting', () => {
