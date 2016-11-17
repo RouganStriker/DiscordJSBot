@@ -47,7 +47,7 @@ const loadCommands = () => {
 
   loader(commands_dir, 'command.js', (command_path) => {
     command = require(command_path);
-    commandMgr.registerCommand(command);
+    commandMgr.registerCommand(new command());
 
     console.log("Loaded command from " + command_path);
   });
