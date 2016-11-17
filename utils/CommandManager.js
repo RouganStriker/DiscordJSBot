@@ -8,11 +8,11 @@ class CommandManager {
     this.regexCmd = new RegExp(/^!(\S+)/);
     this.cachedHelpText = null;
 
-    this.registerCommand(new Command({
-      'name': 'help',
-      'description': 'Display this help text',
-      'callback': this.handleHelp.bind(this)
-    }));
+    this.registerCommand(Command(
+      'help',
+      'Display this help text',
+      this.handleHelp.bind(this)
+    ));
 
     this.client.on('message', this.handleMessage.bind(this));
   }
