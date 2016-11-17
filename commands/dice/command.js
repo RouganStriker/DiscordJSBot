@@ -3,14 +3,14 @@ const Command = require('../../utils/Command');
 
 class DiceCommand extends Command {
   constructor() {
-    super('roll', 'Roll a six-sided dice', this.roll);
+    super('roll', 'Roll a six-sided dice');
   }
 
-  roll(message, args) {
+  runCommand(message, args) {
     return this.getRandomInt(6);
   }
 
-  cgetRandomInt(max) {
+  getRandomInt(max) {
     return Math.floor(Math.random() * max + 1);
   }
 }
