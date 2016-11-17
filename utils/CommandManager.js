@@ -32,8 +32,8 @@ class CommandManager {
   }
 
   handleHelp(message) {
-    if (self.cachedHelpText != null) {
-      return self.cachedHelpText;
+    if ( this.cachedHelpText != null) {
+      return this.cachedHelpText;
     }
 
     const helpTexts = [];
@@ -44,9 +44,9 @@ class CommandManager {
       helpTexts.push('!' + cmd.name + ' - ' + cmd.description);
     }
 
-    self.cachedHelpText = "```" + helpTexts.join('\n') + "```";
+    this.cachedHelpText = "```" + helpTexts.join('\n') + "```";
 
-    return self.cachedHelpText;
+    return this.cachedHelpText;
   }
 
   handleMessage(message) {
