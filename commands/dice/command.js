@@ -1,7 +1,7 @@
 const Command = require('../../utils/Command');
 
 
-class DiceCommand extends Comment {
+class DiceCommand extends Command {
   constructor() {
     super('roll', 'Roll a six-sided dice', this.roll);
   }
