@@ -303,17 +303,17 @@ class BDOBossTrackerPlugin extends BasePlugin {
      */
      this.commands = [];
 
-     this.commands.push(new Command({
-       'name': 'refreshBossTimer',
-       'description': 'Refresh the boss timer',
-       'callback': () => { this.queueTimerPageRefresh(this.lastTimerUpdate) };
-     }));
+     this.commands.push(Command(
+       'refreshBossTimer',
+       'Refresh the boss timer',
+       () => { this.queueTimerPageRefresh(this.lastTimerUpdate) };
+     ));
 
-     this.commands.push(new Command({
-       'name': 'refreshBossCallouts',
-       'description': 'Refresh the boss callouts',
-       'callback': () => { this.queueLivePageRefresh(this.lastLiveUpdate) };
-     }));
+     this.commands.push(Command(
+       'refreshBossCallouts',
+       'Refresh the boss callouts',
+       () => { this.queueLivePageRefresh(this.lastLiveUpdate) };
+     ));
   }
 
   getCommands() {
