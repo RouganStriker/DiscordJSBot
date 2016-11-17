@@ -24,7 +24,7 @@ class ChannelUpdateLock {
   }
 
   isLocked() {
-    return this.count <= 0;
+    return this.count > 0;
   }
 
   unlock() {
