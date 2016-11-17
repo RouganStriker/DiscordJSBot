@@ -82,52 +82,70 @@ class BDOBossTrackerPlugin extends BasePlugin {
     console.log("Found " + this.GUILD_BOSS_CALLOUTS_CHANNELS.length + " callout channels");
   }
 
+  fetchLatestTimer() {
+    // There is at most 1 message on the timer channel
+    this.IHAU_TIMER_CHANNEL.fetchMessages()
+      .then(messages => {
+        if (messages.size > 0) {
+          const new_timer = messages.first().content;
+          this.queueTimerPageRefresh(new_timer);
+        }
+      })
+      .catch(console.error);
+  }
+
+  fetchLatestCallout() {
+    // The latest callout should be the latest post by the IHA Bot
+    this.IHAU_UPDATE_CHANNEL.fetchMessages()
+      .then(messages => {
+        const filteredMessages = messages.filter(message => message.author.id === this.IHAU_BOT_ID);
+        if (filteredMessages) {
+          const new_callout = filteredMessages.first().content;
+          this.queueLivePageRefresh(new_callout);
+        }
+      })
+      .catch(console.error);
+  }
+
   initListener() {
     console.log("Initializing Listeners");
     this.fetchChannels();
     this.LISTENER_CLIENT.on('ready', () => {
       console.log(this.LISTENER_CLIENT.user.username + " user is ready");
 		  this.IHAU_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_LIVE_CHANNEL_ID);
-      const ihauTimerChannel = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_TIMER_CHANNEL_ID);
+      this.IHAU_TIMER_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_TIMER_CHANNEL_ID);
 
-      ihauTimerChannel.fetchMessages()
-        .then(messages => {
-          if (messages.size > 0) {
-            const new_timer = messages.first().content;
-            this.queueTimerPageRefresh(new_timer);
-          }
-        })
-        .catch(console.log);
-      });
+      this.fetchLatestTimer();
+    });
 
-      this.LISTENER_CLIENT.on('message', message => {
-        // Listen for boss timer changes
-        const guild = message.guild;
-        const author = message.author;
-        const channel = message.channel;
+    this.LISTENER_CLIENT.on('message', message => {
+      // Listen for boss timer changes
+      const guild = message.guild;
+      const author = message.author;
+      const channel = message.channel;
 
-        if (channel.type == "text" && guild.available && guild.id == IHAU_GUILD_ID && author.id == IHAU_BOT_ID) {
-          // Update from IHAU's bot
-          if (channel.id == IHAU_BOSS_TIMER_CHANNEL_ID) {
-            // Boss Timer update
-            this.queueTimerPageRefresh(message.content);
-          } else if (channel.id == IHAU_BOSS_LIVE_CHANNEL_ID) {
-            // Live updates
-            this.queueLivePageRefresh(message.content);
-          }
-        } else if (author.id != this.LISTENER_CLIENT.user.id && channel.type == "dm") {
-          // Auto-respond
-          channel.sendMessage("You've caught me! I am actually a bot. For more information please message @rouganstriker#5241")
+      if (channel.type == "text" && guild.available && guild.id == IHAU_GUILD_ID && author.id == IHAU_BOT_ID) {
+        // Update from IHAU's bot
+        if (channel.id == IHAU_BOSS_TIMER_CHANNEL_ID) {
+          // Boss Timer update
+          this.queueTimerPageRefresh(message.content);
+        } else if (channel.id == IHAU_BOSS_LIVE_CHANNEL_ID) {
+          // Live updates
+          this.queueLivePageRefresh(message.content);
         }
-      });
+      } else if (author.id != this.LISTENER_CLIENT.user.id && channel.type == "dm") {
+        // Auto-respond
+        channel.sendMessage("You've caught me! I am actually a bot. For more information please message @rouganstriker#5241")
+      }
+    });
 
-      this.LISTENER_CLIENT.on('reconnecting', () => {
-        console.warn("Attempting to reconnect...");
-      });
+    this.LISTENER_CLIENT.on('reconnecting', () => {
+      console.warn("Attempting to reconnect...");
+    });
 
-      this.LISTENER_CLIENT.on('error', (error) => {
-        console.error(error);
-      });
+    this.LISTENER_CLIENT.on('error', (error) => {
+      console.error(error);
+    });
 
 	  this.LISTENER_CLIENT.login(process.env.BDO_BOSS_TRACKER_LISTENER_TOKEN);
   }
@@ -168,7 +186,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
       };
       const handleError = (error) => {
         this.timerUpdateLock.unlock();
-        console.log(error);
+        console.error(error);
       }
 
       channel.fetchMessages()
@@ -219,7 +237,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
       };
       const handleError = (error) => {
         this.liveUpdateLock.unlock();
-        console.log(error);
+        console.error(error);
       }
 
       channel.fetchMessages({limit: 100})
@@ -298,21 +316,21 @@ class BDOBossTrackerPlugin extends BasePlugin {
   initCommands() {
     /*
      *  BDO boss tracker related commands
-     *  - /refreshBossTimer
-     *  - /refreshBossCallouts
+     *  - !refreshBossTimer
+     *  - !refreshBossCallouts
      */
      this.commands = [];
 
      this.commands.push(new Command(
        'refreshBossTimer',
        'Refresh the boss timer',
-       () => { this.queueTimerPageRefresh(this.lastTimerUpdate); }
+       this.fetchLatestTimer.bind(this)
      ));
 
      this.commands.push(new Command(
        'refreshBossCallouts',
        'Refresh the boss callouts',
-       () => { this.queueLivePageRefresh(this.lastLiveUpdate); }
+       this.fetchLatestCallout.bind(this)
      ));
   }
 
