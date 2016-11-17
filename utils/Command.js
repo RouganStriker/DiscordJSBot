@@ -6,3 +6,5 @@ class Command {
     this.permissions = permissions;   // Optional. Required user permissions to see and use this command
   }
 }
+
+module.exports = Command;
