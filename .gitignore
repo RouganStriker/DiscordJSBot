@@ -48,3 +48,6 @@ Temporary Items
 
 # Pycharm
 .idea/
+
+# node modules
+node_modules/

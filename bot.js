@@ -3,72 +3,82 @@ require('log-timestamp');
 const fs = require('fs');
 const path_module = require('path');
 const Discord = require('discord.js');
-const BasePlugin = require('./utils/BasePlugin');
-const bot = new Discord.Client();
-const plugin_dir = path_module.join(__dirname, 'plugins');
-var plugin_holder = {};
+const CommandManager = require('./utils/CommandManager');
 
-const isClass = (v) => {
-   return typeof v === 'function' && v.prototype.constructor === v;
-}
+const disabled_plugins = require('./disabled_plugins.conf');
+const disabled_extensions = require('./disabled_commands.conf');
 
-const LoadPlugins = () => {
-  var num_plugins = 0;
-  var num_loaded = 0;
+const client = new Discord.Client();
+const plugins_dir = path_module.join(__dirname, 'plugins');
+const commands_dir = path_module.join(__dirname, 'commands');
 
-  fs.lstat(plugin_dir, function(err, stat) {
-    if (!stat.isDirectory()) {
-      console.log("Expected plugins to be a directory");
-      exit(1);
-    }
+const commandMgr = new CommandManager(client);
+const loadedPlugins = [];
 
-    fs.readdir(plugin_dir, function(err, files) {
-      const num_plugins = files.length;
-      var num_loaded = 0;
-      var plugin = null;
+const loader = (directory, fileName, callback) => {
+  // Navigates the directory and looks for all occurrences of fileName in the subdirectories
 
-      console.log("Found " + num_plugins + " plugins");
+  if (!fs.lstatSync(directory).isDirectory()) {
+    console.log("Expected " + directory + " to be a directory");
+    exit(1);
+  }
 
-      for (var i = 0; i < num_plugins; i++) {
-        f = path_module.join(plugin_dir, files[i]);
-
-        try {
-          plugin = require(f);
-
-          if (!isClass(plugin) || plugin.prototype instanceof BasePlugin) {
-            console.log("Invalid plugin : " + files[i]);
-            continue;
-          }
-
-          // Initialize plugin
-          plugin_holder[files[i]] = plugin(bot);
-        } catch(e) {
-          console.log("Failed to load " + files[i] + ". Reason : " + e);
-          continue;
-        }
-
-        console.log("Loaded plugin " + files[i]);
-        num_loaded++;
+  fs.readdir(directory, function(err, subdirectories) {
+    for (const i in subdirectories) {
+      const f = path_module.join(directory, subdirectories[i]);
+      if (!fs.lstatSync(f).isDirectory()) {
+        continue;
       }
 
-      console.log("Loaded " + num_loaded + "/" + num_plugins + " plugins");
-    });
+      // Look for fileName in subdirectory
+      fs.readdir(f, function(err, files) {
+        for (const j in files) {
+          if (files[j] === fileName) {
+            callback(path_module.join(f, files[j]));
+          }
+        }
+      });
+    }
   });
 };
 
-bot.on('ready', () => {
+const loadCommands = () => {
+  let command = null;
+
+  loader(commands_dir, 'command.js', (command_path) => {
+    command = require(command_path);
+    commandMgr.registerCommand(command);
+  });
+};
+
+const loadPlugins = () => {
+  let plugin = null;
+
+  loader(plugins_dir, 'plugin.js', (plugin_path) => {
+    plugin = require(plugin_path);
+
+    const newPlugin = new plugin(client);
+    commandMgr.registerPluginCommands(newPlugin.getCommands());
+    loadedPlugins.push(newPlugin);
+  });
+};
+
+client.on('ready', () => {
   console.log("Discord Bot is ready.");
 
-  // Load plugins
-  LoadPlugins();
+  // Load commands
+  loadCommands();
+
+  loadPlugins();
 });
 
-bot.on('message', message => {
-  if (message.content.match(/^!help$/i)) {
-    message.channel.sendMessage("```!help Display this message```");
-  }
+client.on('reconnecting', () => {
+  console.warn("Discord Bot attempting to reconnect...");
 });
 
-bot.login(process.env.DISCORD_BOT_TOKEN)
-   .catch((reason) => console.log);
+client.on('error', (error) => {
+  console.error(error);
+});
 
+client.login(process.env.DISCORD_BOT_TOKEN)
+      .catch((reason) => console.log);

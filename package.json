@@ -7,6 +7,7 @@
     "discord.js": "^9.2.0",
     "expres": "^0.0.5",
 	"log-timestamp": "^0.1.2",
+    "nedb": "^1.8.0",
     "parse-function": "^2.3.0"
   },
   "devDependencies": {},
