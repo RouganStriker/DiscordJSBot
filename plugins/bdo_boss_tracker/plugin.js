@@ -12,10 +12,10 @@ const BasePlugin = require('../../utils/BasePlugin');
 const Command = require('../../utils/Command');
 
 // Data is taken from the IHAU discord server
-const IHAU_GUILD_ID = "208190699701665793";
-const IHAU_BOT_ID = "245957037190676481";
-const IHAU_BOSS_TIMER_CHANNEL_ID = "214032289254998016";
-const IHAU_BOSS_LIVE_CHANNEL_ID = "214032387674210304";
+const IHAU_GUILD_ID = "246230860645269504";
+const IHAU_BOT_ID = "249857283717201920";
+const IHAU_BOSS_TIMER_CHANNEL_ID = "250988763155660801";
+const IHAU_BOSS_LIVE_CHANNEL_ID = "250988782051000321";
 
 
 class ChannelUpdateLock {
@@ -98,8 +98,10 @@ class BDOBossTrackerPlugin extends BasePlugin {
     // The latest callout should be the latest post by the IHA Bot
     this.IHAU_UPDATE_CHANNEL.fetchMessages()
       .then(messages => {
-        const filteredMessages = messages.filter(message => message.author.id === this.IHAU_BOT_ID);
-        if (filteredMessages) {
+        const filteredMessages = messages.filter((message) => {
+           return message.author.id === IHAU_BOT_ID;
+        });
+        if (filteredMessages.size > 0) {
           const new_callout = filteredMessages.first().content;
           this.queueLivePageRefresh(new_callout);
         }
@@ -133,8 +135,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
           // Live updates
           this.queueLivePageRefresh(message.content);
         }
-      } else if (author.id != this.LISTENER_CLIENT.user.id && channel.type == "dm") {
-        // Auto-respond
+      } else if (author.id != this.LISTENER_CLIENT.user.id && !author.bot && channel.type == "dm") {
+        // Auto-respond to non-bot direct messages
         channel.sendMessage("You've caught me! I am actually a bot. For more information please message @rouganstriker#5241")
       }
     });
@@ -156,8 +158,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
 		  return;
 	  }
 
-    console.log("[" + channel.guild.name + "] " + log);
-    channel.sendMessage(message).then(callback).catch(console.log);
+    console.debug("[" + channel.guild.name + "] " + log);
+    channel.sendMessage(message).then(callback).catch(console.error);
   }
 
 	queueTimerPageRefresh(new_update) {
@@ -205,7 +207,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         })
         .catch((e) => {
           this.timerUpdateLock.unlock();
-          console.log(handleError);
+          console.error(handleError);
         });
     });
   }
@@ -244,14 +246,16 @@ class BDOBossTrackerPlugin extends BasePlugin {
              .then(messages => {
                let filtered_messages = null;
 
-               if (new_update.indexOf("# UP") >= 0) {
-                 // Clear only the live HP updates
+               if (new_update.indexOf("Currently no Bosses alive") >= 0) {
+                 // Clear everything but the pinned messages
                  filtered_messages = messages.filter((message) => {
-                   return message.content.indexOf('# UP') >= 0;
+                   return !message.pinned;
                  });
-               } else if (new_update.indexOf("Currently no Bosses alive") >= 0) {
-                 // Clear everything
-                 filtered_messages = messages;
+               } else {
+                 filtered_messages = messages.filter((message) => {
+                   // Delete the bot's previous message
+                   return message.author.id === this.client.user.id;
+                 });
                }
 
                if (filtered_messages != null && filtered_messages.size > 1) {
@@ -273,13 +277,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
   initRelay() {
     // Relay messages back to IHAU
     const validBosses = [
-      'red', 'r',
-      'bheg', 'b',
-      'tree', 't',
-      'karanda', 'ka',
-      'mud', 'm',
-      'kutum', 'ku',
-      'kzarka', 'kz'
+      'rn',
+      'dt',
+      'bh',
+      'gm',
+      'ku',
+      'ka',
+      'kz',
     ];
 
     const validChannels = [
@@ -292,7 +296,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     ];
 
     const initRegex = new RegExp('^(' + validBosses.join('|') + ') (up|spawned|unconfirmed)', 'i');
-    const liveRegex = new RegExp('^(' + validBosses.join('|') + ') (' + validChannels.join('|') + ')[12] (\\d{1,3}%?|d|dead)', 'i');
+    const liveRegex = new RegExp('^(' + validBosses.join('|') + ') (' + validChannels.join('|') + ')[12] (\\d{1,7}%?|d|dead)', 'i');
 
     this.client.on('message', message => {
       const {
@@ -305,10 +309,10 @@ class BDOBossTrackerPlugin extends BasePlugin {
       }
 
       if (message.content.match(initRegex) || message.content.match(liveRegex)) {
-        console.log("Relaying update: " + message.author.username + " - " + message.content);
+        console.debug("Relaying update: " + message.author.username + " - " + message.content);
         this.IHAU_UPDATE_CHANNEL.sendMessage(message.content)
-                                .then("Relayed update to IHAU")
-                                .catch("Failed to relay update to IHAU");
+                                .then("Relayed update to IHANA")
+                                .catch("Failed to relay update to IHANA");
       }
     });
   }
