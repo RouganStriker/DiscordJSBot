@@ -227,7 +227,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
           postMessage,
           "Refreshing live call-outs"
         );
-      }
+      });
     } else if (this.liveUpdateLock.getLock()) {
       this.refreshLivePage();
     }
