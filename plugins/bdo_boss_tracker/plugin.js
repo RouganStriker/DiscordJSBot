@@ -158,7 +158,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 		  return;
 	  }
 
-    console.debug("[" + channel.guild.name + "] " + log);
+    //console.info("[" + channel.guild.name + "] " + log);
     channel.sendMessage(message).then(callback).catch(console.error);
   }
 
@@ -309,7 +309,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
       }
 
       if (message.content.match(initRegex) || message.content.match(liveRegex)) {
-        console.debug("Relaying update: " + message.author.username + " - " + message.content);
+        //console.info("Relaying update: " + message.author.username + " - " + message.content);
         this.IHAU_UPDATE_CHANNEL.sendMessage(message.content)
                                 .then("Relayed update to IHANA")
                                 .catch("Failed to relay update to IHANA");
