@@ -215,7 +215,20 @@ class BDOBossTrackerPlugin extends BasePlugin {
   queueLivePageRefresh(new_update) {
     this.lastLiveUpdate = new_update;
 
-    if (this.liveUpdateLock.getLock()) {
+    if (new_update.mentions.roles.size > 0) {
+      // Boss call-out, post right away
+      const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
+      const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
+      const postMessage = "@everyone " + new_update.cleanContent;
+
+      callout_channels.forEach((channel) => {
+        this.postToChannel(
+          channel,
+          postMessage,
+          "Refreshing live call-outs"
+        );
+      }
+    } else if (this.liveUpdateLock.getLock()) {
       this.refreshLivePage();
     }
   }
@@ -227,12 +240,6 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     // Unlock after we have updated every channel
     this.liveUpdateLock.setLock(callout_channels.length);
-
-    if (this.lastLiveUpdate.mentions.roles.size > 0) {
-      // The server won't have the same roles that are getting mentioned,
-      // just prefix the message with an @everyone
-      new_update = "@everyone " + new_update;
-    }
 
     callout_channels.forEach((channel) => {
       const performUpdate = () => {
