@@ -67,7 +67,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.initRelay();
     this.initCommands();
 
-    this.lastLiveUpdate = '';
+    this.lastLiveUpdate = null;
     this.liveUpdateLock = new ChannelUpdateLock();
 
     this.lastTimerUpdate = '';
@@ -102,7 +102,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
            return message.author.id === IHAU_BOT_ID;
         });
         if (filteredMessages.size > 0) {
-          const new_callout = filteredMessages.first().content;
+          const new_callout = filteredMessages.first();
           this.queueLivePageRefresh(new_callout);
         }
       })
@@ -114,7 +114,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.fetchChannels();
     this.LISTENER_CLIENT.on('ready', () => {
       console.log(this.LISTENER_CLIENT.user.username + " user is ready");
-		  this.IHAU_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_LIVE_CHANNEL_ID);
+      this.IHAU_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_LIVE_CHANNEL_ID);
       this.IHAU_TIMER_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_TIMER_CHANNEL_ID);
 
       this.fetchLatestTimer();
@@ -133,7 +133,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
           this.queueTimerPageRefresh(message.content);
         } else if (channel.id == IHAU_BOSS_LIVE_CHANNEL_ID) {
           // Live updates
-          this.queueLivePageRefresh(message.content);
+          this.queueLivePageRefresh(message);
         }
       } else if (author.id != this.LISTENER_CLIENT.user.id && !author.bot && channel.type == "dm") {
         // Auto-respond to non-bot direct messages
@@ -149,26 +149,26 @@ class BDOBossTrackerPlugin extends BasePlugin {
       console.error(error);
     });
 
-	  this.LISTENER_CLIENT.login(process.env.BDO_BOSS_TRACKER_LISTENER_TOKEN);
+    this.LISTENER_CLIENT.login(process.env.BDO_BOSS_TRACKER_LISTENER_TOKEN);
   }
 
   postToChannel(channel, message, log, callback) {
     if (!this.client.channels.exists('id', channel.id)) {
-		  console.log("Channel no longer exists, pending purge from cache: " + channel.id);
-		  return;
-	  }
+      console.log("Channel no longer exists, pending purge from cache: " + channel.id);
+      return;
+    }
 
     //console.info("[" + channel.guild.name + "] " + log);
     channel.sendMessage(message).then(callback).catch(console.error);
   }
 
-	queueTimerPageRefresh(new_update) {
+  queueTimerPageRefresh(new_update) {
     this.lastTimerUpdate = new_update;
 
-	  if (this.timerUpdateLock.getLock()) {
-	  	this.refreshTimerPage();
-	  }
-	}
+    if (this.timerUpdateLock.getLock()) {
+      this.refreshTimerPage();
+    }
+  }
 
   refreshTimerPage() {
     const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
@@ -212,27 +212,33 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
   }
 
-	queueLivePageRefresh(new_update) {
+  queueLivePageRefresh(new_update) {
     this.lastLiveUpdate = new_update;
 
-	  if (this.liveUpdateLock.getLock()) {
-		  this.refreshLivePage();
-	  }
-	}
+    if (this.liveUpdateLock.getLock()) {
+      this.refreshLivePage();
+    }
+  }
 
   refreshLivePage() {
-	  const new_update = this.lastLiveUpdate;
+    const new_update = this.lastLiveUpdate.cleanContent;
     const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
     const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
 
     // Unlock after we have updated every channel
     this.liveUpdateLock.setLock(callout_channels.length);
 
+    if (this.lastLiveUpdate.mentions.roles.size > 0) {
+      // The server won't have the same roles that are getting mentioned,
+      // just prefix the message with an @everyone
+      new_update = "@everyone " + new_update;
+    }
+
     callout_channels.forEach((channel) => {
       const performUpdate = () => {
         this.postToChannel(
           channel,
-          this.lastLiveUpdate,
+          new_update,
           "Refreshing live call-outs",
           this.liveUpdateLock.unlock()
         );
@@ -253,8 +259,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
                  });
                } else {
                  filtered_messages = messages.filter((message) => {
-                   // Delete the bot's previous message
-                   return message.author.id === this.client.user.id;
+                   // Delete the bot's updates excluding the callouts
+                   return message.author.id === this.client.user.id && message.mentions.roles.size === 0;
                  });
                }
 
