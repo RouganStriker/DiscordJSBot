@@ -221,7 +221,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
   }
 
   refreshLivePage() {
-    const new_update = this.lastLiveUpdate.cleanContent;
+    let new_update = this.lastLiveUpdate.cleanContent;
     const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
     const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
 
