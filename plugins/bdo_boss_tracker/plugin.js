@@ -267,7 +267,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
                } else {
                  filtered_messages = messages.filter((message) => {
                    // Delete the bot's updates excluding the callouts
-                   return message.author.id === this.client.user.id && message.mentions.roles.size === 0;
+                   return message.author.id === this.client.user.id && !message.mentions.everyone;
                  });
                }
 

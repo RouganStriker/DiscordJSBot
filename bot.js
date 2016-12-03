@@ -3,6 +3,7 @@ require('log-timestamp');
 const fs = require('fs');
 const path_module = require('path');
 const Discord = require('discord.js');
+const Datastore = require('nedb')
 const CommandManager = require('./utils/CommandManager');
 
 const disabled_plugins = require('./disabled_plugins.conf');
@@ -62,6 +63,18 @@ const loadPlugins = () => {
     plugin = require(plugin_path);
 
     const newPlugin = new plugin(client);
+
+    if (newPlugin.requireDatastore && newPlugin.getDatastore() === null) {
+      // Load the datastore.
+      // Each plugin gets its own datastore
+      const dsName = path_module.format({
+        dir: './db/plugins/',
+        name: path_module.dirname(plugin_path),
+        ext: '.db'
+      });
+      newPlugin.setDatastore(new Datastore({ filename: dsName, autoload: true }))
+    }
+
     commandMgr.registerPluginCommands(newPlugin.getCommands());
     loadedPlugins.push(newPlugin);
 
