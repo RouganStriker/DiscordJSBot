@@ -31,7 +31,9 @@ class BasePlugin {
   }
 
   log(message) {
-    console.log('[' + this.name +'] ' + message);
+    if (message) {
+      console.log('[' + this.name +'] ' + message);
+    }
   }
 }
 

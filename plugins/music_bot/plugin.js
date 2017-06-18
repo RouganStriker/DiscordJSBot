@@ -47,6 +47,7 @@ class MusicPlugin extends BasePlugin {
         console.error("[musicDB] 'playCount' field error : " + err);
       }
     });
+    });
 
     // Setup the config DB
     this.configDB = this.getDB('config');
