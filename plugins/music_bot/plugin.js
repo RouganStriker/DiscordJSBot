@@ -9,7 +9,7 @@ class MusicPlugin extends BasePlugin {
 
   updateConfig(err, config){
       if (err) {
-        self.log(err);
+        this.log(err).bind(this);
         return;
       }
       if (config == null) {
@@ -74,7 +74,7 @@ class MusicPlugin extends BasePlugin {
         return;
       }
 
-      this.log(`Got new message ${message.content}`);
+      this.log(`Got new message ${message.content}`).bind(this);
     });
   }
 
@@ -89,7 +89,7 @@ class MusicPlugin extends BasePlugin {
       { _id: this.configID },
       { $set: { MUSIC_CHANNEL_ID: args[1] } },
       {},
-      this.log
+      this.log.bind(this)
     );
 
     return `Setting music channel ID to ${args[1]}`;
@@ -102,7 +102,7 @@ class MusicPlugin extends BasePlugin {
       { _id: this.configID },
       { $set: { VOICE_CHANNEL_ID: args[1] } },
       {},
-      this.log
+      this.log.bind(this)
     );
 
     return `Setting voice channel ID to ${args[1]}`;

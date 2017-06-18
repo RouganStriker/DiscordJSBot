@@ -63,9 +63,10 @@ const loadPlugins = () => {
 
   loader(plugins_dir, 'plugin.js', (plugin_path) => {
     const dirname = path_module.dirname(plugin_path);
+    const pluginName = path_module.basename(dirname);
 
-    if (disabledPlugins.indexOf(path_module.basename(dirname)) >= 0) {
-      console.log(`Skipping plugin ${path_module.basename(dirname)}`);
+    if (disabledPlugins.indexOf(pluginName) >= 0) {
+      console.log(`Skipping plugin ${pluginName}`);
       return;
     }
 
@@ -85,7 +86,7 @@ const loadPlugins = () => {
         onload: console.error
       });
     }
-    const newPlugin = new plugin(client, provision_datastore, path_module.dirname(plugin_path));
+    const newPlugin = new plugin(client, provision_datastore, pluginName);
 
     commandMgr.registerPluginCommands(newPlugin.getCommands());
     loadedPlugins.push(newPlugin);
