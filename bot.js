@@ -64,9 +64,9 @@ const loadPlugins = () => {
   loader(plugins_dir, 'plugin.js', (plugin_path) => {
     const dirname = path_module.dirname(plugin_path);
 
-    if (path_module.basename(dirname) in disabledPlugins) {
+    if (disabledPlugins.indexOf(path_module.basename(dirname)) >= 0) {
       console.log(`Skipping plugin ${path_module.basename(dirname)}`);
-      continue;
+      return;
     }
 
     plugin = require(plugin_path);

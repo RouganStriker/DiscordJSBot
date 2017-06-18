@@ -20,13 +20,13 @@ class MusicPlugin extends BasePlugin {
           AUTO_ADD_NEW_LINKS: true                  // Whether to auto add new links from MUSIC_CHANNEL_ID to playlist
         };
 
-        this.configDB.insert(config);
+        this.configDB.insert(config, this.updateConfig.bind(this));
+      } else {
+        this.MUSIC_CHANNEL_ID = config.MUSIC_CHANNEL_ID;
+        this.VOICE_CHANNEL_ID = config.VOICE_CHANNEL_ID;
+        this.AUTO_ADD_NEW_LINKS = config.AUTO_ADD_NEW_LINKS;
+        this.configID = config._id;
       }
-
-      this.MUSIC_CHANNEL_ID = config.MUSIC_CHANNEL_ID;
-      this.VOICE_CHANNEL_ID = config.VOICE_CHANNEL_ID;
-      this.AUTO_ADD_NEW_LINKS = config.AUTO_ADD_NEW_LINKS;
-      this.configID = config._id;
   }
 
   initDB() {
@@ -83,38 +83,30 @@ class MusicPlugin extends BasePlugin {
   }
 
   setMusicChannelID(message) {
-    const args = message.split(' ');
+    const args = message.content.split(' ');
 
     this.configDB.update(
       { _id: this.configID },
-      { $set: { MUSIC_CHANNEL_ID: args[0] } },
+      { $set: { MUSIC_CHANNEL_ID: args[1] } },
       {},
-      function (err) {
-        if (err) {
-          return err;
-        } else {
-          return `Set music channel ID to ${args[0]}`;
-        }
-      }
+      this.log
     );
+
+    return `Setting music channel ID to ${args[1]}`;
   }
 
   setVoiceChannelID(message) {
-    const args = message.split(' ');
+    const args = message.content.split(' ');
 
     this.configDB.update(
       { _id: this.configID },
-      { $set: { VOICE_CHANNEL_ID: args[0] } },
+      { $set: { VOICE_CHANNEL_ID: args[1] } },
       {},
-      function (err) {
-        if (err) {
-          return err;
-        } else {
-          return `Set voice channel ID to ${args[0]}`;
-        }
-      }
+      this.log
     );
+
+    return `Setting voice channel ID to ${args[1]}`;
   }
 }
 
-modules.export = MusicPlugin;
+module.exports = MusicPlugin;
