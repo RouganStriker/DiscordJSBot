@@ -33,13 +33,19 @@ class MusicPlugin extends BasePlugin {
     // Setup music DB
     this.musicDB = this.getDB('music');
     this.musicDB.ensureIndex({ fieldName: 'name' }, function (err) {
-      console.error("[musicDB] 'name' field error : " + err);
+      if (err) {
+        console.error("[musicDB] 'name' field error : " + err);
+      }
     });
     this.musicDB.ensureIndex({ fieldName: 'link', unique: true }, function (err) {
-      console.error("[musicDB] 'link' field error : " + err);
+      if (err) {
+       console.error("[musicDB] 'link' field error : " + err);
+      }
     });
     this.musicDB.ensureIndex({ fieldName: 'playCount' }, function (err) {
-      console.error("[musicDB] 'playCount' field error : " + err);
+      if (err) {
+        console.error("[musicDB] 'playCount' field error : " + err);
+      }
     });
 
     // Setup the config DB

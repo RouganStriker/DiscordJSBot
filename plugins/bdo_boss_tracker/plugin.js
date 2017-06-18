@@ -51,6 +51,11 @@ class ChannelUpdateLock {
 
 class BDOBossTrackerPlugin extends BasePlugin {
   updateConfig(err, config) {
+    if (err) {
+      this.log(err).bind(this);
+      return;
+    }
+
     if (config == null) {
         // Load the default values into the DB
         config = {
@@ -60,13 +65,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
           IHAU_BOSS_LIVE_CHANNEL_ID: "250988782051000321"
         };
 
-        this.configDB.insert(config);
+        this.configDB.insert(config, this.updateConfig.bind(this));
+      } else {
+        this.IHAU_GUILD_ID = config.IHAU_GUILD_ID;
+        this.IHAU_BOT_ID = config.IHAU_BOT_ID;
+        this.IHAU_BOSS_TIMER_CHANNEL_ID = config.IHAU_BOSS_TIMER_CHANNEL_ID;
+        this.IHAU_BOSS_LIVE_CHANNEL_ID = config.IHAU_BOSS_LIVE_CHANNEL_ID;
       }
-
-      this.IHAU_GUILD_ID = config.IHAU_GUILD_ID;
-      this.IHAU_BOT_ID = config.IHAU_BOT_ID;
-      this.IHAU_BOSS_TIMER_CHANNEL_ID = config.IHAU_BOSS_TIMER_CHANNEL_ID;
-      this.IHAU_BOSS_LIVE_CHANNEL_ID = config.IHAU_BOSS_LIVE_CHANNEL_ID;
   }
 
   initDB() {
@@ -326,7 +331,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     ];
 
     const initRegex = new RegExp('^(' + validBosses.join('|') + ') (up|spawned|unconfirmed)', 'i');
-    const liveRegex = new RegExp('^(' + validBosses.join('|') + ') (' + validChannels.join('|') + ')[12] (\\d{1,7}%?|d|dead)', 'i');
+    const liveRegex = new RegExp('^(' + validBosses.join('|') + ') (' + validChannels.join('|') + ')[1-6] (\\d{1,3}%?|d|dead)', 'i');
 
     this.client.on('message', message => {
       const {
