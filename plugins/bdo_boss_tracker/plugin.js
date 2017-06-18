@@ -58,7 +58,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         // Load the default values into the DB
         config = {
           IHAU_GUILD_ID: "246230860645269504",
-          IHAU_BOT_ID: "249857283717201920",
+          IHAU_BOT_ID: "299092132189175808",
           IHAU_BOSS_TIMER_CHANNEL_ID: "250988763155660801",
           IHAU_BOSS_LIVE_CHANNEL_ID: "250988782051000321"
         };
