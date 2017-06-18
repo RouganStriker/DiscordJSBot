@@ -26,8 +26,8 @@ class ManageMemberPlugin extends BasePlugin {
       if (doc != null) {
         // Load the default values into the DB
         config = {
-          MUSIC_CHANNEL_ID: "246230860645269504",   // Channel to monitor for new music links
-          VOICE_CHANNEL_ID: "249857283717201920",   // Channel to play music
+          MUSIC_CHANNEL_ID: null,   // Channel to monitor for new music links
+          VOICE_CHANNEL_ID: null,   // Channel to play music
           AUTO_ADD_NEW_LINKS: true                  // Whether to auto add new links from MUSIC_CHANNEL_ID to playlist
         };
 
@@ -37,14 +37,30 @@ class ManageMemberPlugin extends BasePlugin {
       this.MUSIC_CHANNEL_ID = config.MUSIC_CHANNEL_ID;
       this.VOICE_CHANNEL_ID = config.VOICE_CHANNEL_ID;
       this.AUTO_ADD_NEW_LINKS = config.AUTO_ADD_NEW_LINKS;
+      this.configID = config._id;
     });
   }
+
 
   initCommands() {
     /*
      *  MusicBot related commands
      */
      this.commands = [];
+
+     this.commands.push(new Command(
+       'setMusicChannelID',
+       'Set music channel for MusicBot',
+       this.setMusicChannelID.bind(this),
+       ['ADMINISTRATOR']
+     ));
+
+     this.commands.push(new Command(
+       'setVoiceChannelID',
+       'Set voice channel for MusicBot',
+       this.setVoiceChannelID.bind(this),
+       ['ADMINISTRATOR']
+     ));
   }
 
   initListener() {
@@ -55,5 +71,43 @@ class ManageMemberPlugin extends BasePlugin {
 
       this.log(`Got new message ${message.content}`);
     }
+  }
+
+  getCommands() {
+    return this.commands;
+  }
+
+  setMusicChannelID(message) {
+    const args = message.split(' ');
+
+    this.configDB.update(
+      { _id: this.configID },
+      { $set: { MUSIC_CHANNEL_ID: args[0] } },
+      {},
+      function (err) {
+        if (err) {
+          return err;
+        } else {
+          return `Set music channel ID to {args[0]}`;
+        }
+      }
+    );
+  }
+
+  setVoiceChannelID(message) {
+    const args = message.split(' ');
+
+    this.configDB.update(
+      { _id: this.configID },
+      { $set: { VOICE_CHANNEL_ID: args[0] } },
+      {},
+      function (err) {
+        if (err) {
+          return err;
+        } else {
+          return `Set voice channel ID to {args[0]}`;
+        }
+      }
+    );
   }
 }
