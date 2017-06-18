@@ -1,29 +1,18 @@
 const BasePlugin = require('../../utils/BasePlugin');
+const Command = require('../../utils/Command');
 
-class ManageMemberPlugin extends BasePlugin {
+class MusicPlugin extends BasePlugin {
   init() {
-    this.initDB();
     this.initCommands();
     this.initListener();
   }
 
-  initDB() {
-    // Setup music DB
-    this.membersDB = this.getDB('songs', true);
-    this.fieldsDB.ensureIndex({ fieldName: 'name' }, function (err) {
-      console.error("[songsDB] 'name' field error : " + err);
-    });
-    this.fieldsDB.ensureIndex({ fieldName: 'link', unique: true }, function (err) {
-      console.error("[songsDB] 'link' field error : " + err);
-    });
-    this.fieldsDB.ensureIndex({ fieldName: 'playCount' }, function (err) {
-      console.error("[songsDB] 'playCount' field error : " + err);
-    });
-
-    // Setup the config DB
-    this.configDB = this.getDB('config');
-    this.configDB.findOne({}, function(err, config) {
-      if (doc != null) {
+  updateConfig(err, config){
+      if (err) {
+        self.log(err);
+        return;
+      }
+      if (config == null) {
         // Load the default values into the DB
         config = {
           MUSIC_CHANNEL_ID: null,   // Channel to monitor for new music links
@@ -38,9 +27,25 @@ class ManageMemberPlugin extends BasePlugin {
       this.VOICE_CHANNEL_ID = config.VOICE_CHANNEL_ID;
       this.AUTO_ADD_NEW_LINKS = config.AUTO_ADD_NEW_LINKS;
       this.configID = config._id;
-    });
   }
 
+  initDB() {
+    // Setup music DB
+    this.musicDB = this.getDB('music');
+    this.musicDB.ensureIndex({ fieldName: 'name' }, function (err) {
+      console.error("[musicDB] 'name' field error : " + err);
+    });
+    this.musicDB.ensureIndex({ fieldName: 'link', unique: true }, function (err) {
+      console.error("[musicDB] 'link' field error : " + err);
+    });
+    this.musicDB.ensureIndex({ fieldName: 'playCount' }, function (err) {
+      console.error("[musicDB] 'playCount' field error : " + err);
+    });
+
+    // Setup the config DB
+    this.configDB = this.getDB('config');
+    this.configDB.findOne({}, this.updateConfig.bind(this));
+  }
 
   initCommands() {
     /*
@@ -70,7 +75,7 @@ class ManageMemberPlugin extends BasePlugin {
       }
 
       this.log(`Got new message ${message.content}`);
-    }
+    });
   }
 
   getCommands() {
@@ -88,7 +93,7 @@ class ManageMemberPlugin extends BasePlugin {
         if (err) {
           return err;
         } else {
-          return `Set music channel ID to {args[0]}`;
+          return `Set music channel ID to ${args[0]}`;
         }
       }
     );
@@ -105,9 +110,11 @@ class ManageMemberPlugin extends BasePlugin {
         if (err) {
           return err;
         } else {
-          return `Set voice channel ID to {args[0]}`;
+          return `Set voice channel ID to ${args[0]}`;
         }
       }
     );
   }
 }
+
+modules.export = MusicPlugin;

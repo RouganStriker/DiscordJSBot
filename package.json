@@ -5,10 +5,11 @@
   "main": "bot.js",
   "dependencies": {
     "discord.js": "^11.1.0",
-    "expres": "^0.0.5",
+    "express": "^0.0.5",
 	"log-timestamp": "^0.1.2",
     "nedb": "^1.8.0",
-    "parse-function": "^2.3.0"
+    "parse-function": "^2.3.0",
+    "config": "^1.26.1"
   },
   "devDependencies": {},
   "scripts": {

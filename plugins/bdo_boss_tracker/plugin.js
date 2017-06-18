@@ -50,11 +50,8 @@ class ChannelUpdateLock {
 
 
 class BDOBossTrackerPlugin extends BasePlugin {
-  initDB() {
-    this.configDB = this.getDB('config');
-
-    this.configDB.findOne({}, function(err, config) {
-      if (doc != null) {
+  updateConfig(err, config) {
+    if (config == null) {
         // Load the default values into the DB
         config = {
           IHAU_GUILD_ID: "246230860645269504",
@@ -70,8 +67,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
       this.IHAU_BOT_ID = config.IHAU_BOT_ID;
       this.IHAU_BOSS_TIMER_CHANNEL_ID = config.IHAU_BOSS_TIMER_CHANNEL_ID;
       this.IHAU_BOSS_LIVE_CHANNEL_ID = config.IHAU_BOSS_LIVE_CHANNEL_ID;
-    });
+  }
 
+  initDB() {
+    this.configDB = this.getDB('config');
+    this.configDB.findOne({}, this.updateConfig.bind(this));
   }
 
   init() {

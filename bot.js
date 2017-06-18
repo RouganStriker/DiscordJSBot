@@ -9,6 +9,7 @@ const CommandManager = require('./utils/CommandManager');
 const disabled_plugins = require('./disabled_plugins.conf');
 const disabled_extensions = require('./disabled_commands.conf');
 
+const config = require('config');
 const client = new Discord.Client();
 const plugins_dir = path_module.join(__dirname, 'plugins');
 const commands_dir = path_module.join(__dirname, 'commands');
@@ -58,15 +59,23 @@ const loadCommands = () => {
 
 const loadPlugins = () => {
   let plugin = null;
+  const disabledPlugins = config.get('disabledPlugins');
 
   loader(plugins_dir, 'plugin.js', (plugin_path) => {
+    const dirname = path_module.dirname(plugin_path);
+
+    if (path_module.basename(dirname) in disabledPlugins) {
+      console.log(`Skipping plugin ${path_module.basename(dirname)}`);
+      continue;
+    }
+
     plugin = require(plugin_path);
 
     const provision_datastore = (db_name='', timestampData=false, autoload=true) => {
       // Prefix the db_name with the plugin name to avoid db files clashing
       const dsName = path_module.format({
-        dir: './db/plugins/',
-        name: path_module.dirname(plugin_path) + db_name,
+        dir: path_module.dirname(plugin_path),
+        name: db_name,
         ext: '.db'
       });
       return new Datastore({
