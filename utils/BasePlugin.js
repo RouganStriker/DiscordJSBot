@@ -2,11 +2,19 @@ class BasePlugin {
   /**
    * @param {Client} client The Discord Client that gets passed into this Plugin
    */
-  constructor(client, requireDatastore = false) {
+  constructor(client, provision_datastore, plugin_name) {
+    // Discord client
     this.client = client;
-    this.requireDatastore = false;
-    this.datastore = null;
+    // Datastore provisioning function
+    // Usage: provision_datastore(db_name, timestampData=false, onload=true)
+    this.provision_datastore = provision_datastore;
+    this.initDB();
     this.init();
+    this.name = plugin_name;
+  }
+
+  initDB() {
+    // initialize DB structure
   }
 
   init() {
@@ -18,16 +26,12 @@ class BasePlugin {
     return [];
   }
 
-  getDatastore() {
-    if (this.datastore === null) {
-      console.warn("No datastore has been provisioned for this plugin!");
-    }
-    return this.datastore;
+  getDB(db_name, timestampData=false, autoload=true) {
+    return this.provision_datastore(db_name, timestampData, autoload);
   }
 
-  setDatastore(datastore) {
-    // Datastore is auto-provisioned by the plugin loader
-    this.datastore = datastore;
+  log(message) {
+    console.log('[' + self.name +'] ' + message);
   }
 }
 

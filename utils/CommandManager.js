@@ -36,21 +36,19 @@ class CommandManager {
   }
 
   handleHelp(message) {
-    if ( this.cachedHelpText != null) {
-      return this.cachedHelpText;
-    }
-
+    const { member } = message;
     const helpTexts = [];
     let cmd = null;
 
     for (const i in this.commands) {
       cmd = this.commands[i];
+      if (!member.hasPermissions(cmd.permissions)) {
+        continue;
+      }
       helpTexts.push('!' + cmd.name + ' - ' + cmd.description);
     }
 
-    this.cachedHelpText = "```" + helpTexts.join('\n') + "```";
-
-    return this.cachedHelpText;
+    return "```" + helpTexts.join('\n') + "```";
   }
 
   handleMessage(message) {

@@ -62,18 +62,21 @@ const loadPlugins = () => {
   loader(plugins_dir, 'plugin.js', (plugin_path) => {
     plugin = require(plugin_path);
 
-    const newPlugin = new plugin(client);
-
-    if (newPlugin.requireDatastore && newPlugin.getDatastore() === null) {
-      // Load the datastore.
-      // Each plugin gets its own datastore
+    const provision_datastore = (db_name='', timestampData=false, autoload=true) => {
+      // Prefix the db_name with the plugin name to avoid db files clashing
       const dsName = path_module.format({
         dir: './db/plugins/',
-        name: path_module.dirname(plugin_path),
+        name: path_module.dirname(plugin_path) + db_name,
         ext: '.db'
       });
-      newPlugin.setDatastore(new Datastore({ filename: dsName, autoload: true }))
+      return new Datastore({
+        filename: dsName,
+        timestampData,
+        autoload,
+        onload: console.error
+      });
     }
+    const newPlugin = new plugin(client, provision_datastore, path_module.dirname(plugin_path));
 
     commandMgr.registerPluginCommands(newPlugin.getCommands());
     loadedPlugins.push(newPlugin);

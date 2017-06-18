@@ -11,12 +11,6 @@ const Discord = require('discord.js');
 const BasePlugin = require('../../utils/BasePlugin');
 const Command = require('../../utils/Command');
 
-// Data is taken from the IHAU discord server
-const IHAU_GUILD_ID = "246230860645269504";
-const IHAU_BOT_ID = "249857283717201920";
-const IHAU_BOSS_TIMER_CHANNEL_ID = "250988763155660801";
-const IHAU_BOSS_LIVE_CHANNEL_ID = "250988782051000321";
-
 
 class ChannelUpdateLock {
   constructor() {
@@ -56,9 +50,32 @@ class ChannelUpdateLock {
 
 
 class BDOBossTrackerPlugin extends BasePlugin {
-  constructor(client) {
-    super(client);
+  initDB() {
+    this.configDB = this.getDB('config');
 
+    this.configDB.findOne({}, function(err, config) {
+      if (doc != null) {
+        // Load the default values into the DB
+        config = {
+          IHAU_GUILD_ID: "246230860645269504",
+          IHAU_BOT_ID: "249857283717201920",
+          IHAU_BOSS_TIMER_CHANNEL_ID: "250988763155660801",
+          IHAU_BOSS_LIVE_CHANNEL_ID: "250988782051000321"
+        };
+
+        this.configDB.insert(config);
+      }
+
+      this.IHAU_GUILD_ID = config.IHAU_GUILD_ID;
+      this.IHAU_BOT_ID = config.IHAU_BOT_ID;
+      this.IHAU_BOSS_TIMER_CHANNEL_ID = config.IHAU_BOSS_TIMER_CHANNEL_ID;
+      this.IHAU_BOSS_LIVE_CHANNEL_ID = config.IHAU_BOSS_LIVE_CHANNEL_ID;
+    });
+
+  }
+
+  init() {
+    // Data is taken from the IHAU discord server
     this.LISTENER_CLIENT = new Discord.Client();
     this.GUILD_BOSS_TIMER_CHANNELS = null;    // Auto-populated by looking for a #boss_timer channel
     this.GUILD_BOSS_CALLOUTS_CHANNELS = null; // Auto-populated by looking for a #boss_callouts channel
@@ -99,7 +116,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.IHAU_UPDATE_CHANNEL.fetchMessages()
       .then(messages => {
         const filteredMessages = messages.filter((message) => {
-           return message.author.id === IHAU_BOT_ID;
+           return message.author.id === this.IHAU_BOT_ID;
         });
         if (filteredMessages.size > 0) {
           const new_callout = filteredMessages.first();
@@ -114,8 +131,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.fetchChannels();
     this.LISTENER_CLIENT.on('ready', () => {
       console.log(this.LISTENER_CLIENT.user.username + " user is ready");
-      this.IHAU_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_LIVE_CHANNEL_ID);
-      this.IHAU_TIMER_CHANNEL = this.LISTENER_CLIENT.channels.find('id', IHAU_BOSS_TIMER_CHANNEL_ID);
+      this.IHAU_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', this.IHAU_BOSS_LIVE_CHANNEL_ID);
+      this.IHAU_TIMER_CHANNEL = this.LISTENER_CLIENT.channels.find('id', this.IHAU_BOSS_TIMER_CHANNEL_ID);
 
       this.fetchLatestTimer();
     });
@@ -126,12 +143,12 @@ class BDOBossTrackerPlugin extends BasePlugin {
       const author = message.author;
       const channel = message.channel;
 
-      if (channel.type == "text" && guild.available && guild.id == IHAU_GUILD_ID && author.id == IHAU_BOT_ID) {
+      if (channel.type == "text" && guild.available && guild.id == this.IHAU_GUILD_ID && author.id == this.IHAU_BOT_ID) {
         // Update from IHAU's bot
-        if (channel.id == IHAU_BOSS_TIMER_CHANNEL_ID) {
+        if (channel.id == this.IHAU_BOSS_TIMER_CHANNEL_ID) {
           // Boss Timer update
           this.queueTimerPageRefresh(message.content);
-        } else if (channel.id == IHAU_BOSS_LIVE_CHANNEL_ID) {
+        } else if (channel.id == this.IHAU_BOSS_LIVE_CHANNEL_ID) {
           // Live updates
           this.queueLivePageRefresh(message);
         }
@@ -330,11 +347,21 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
   }
 
+  configureSetting(message) {
+    const params = message.content.split(' ');
+
+    if (params.length == 1 || params[1].strip() == '') {
+      // Return current config
+
+    }
+  }
+
   initCommands() {
     /*
      *  BDO boss tracker related commands
      *  - !refreshBossTimer
      *  - !refreshBossCallouts
+     *  - !configure
      */
      this.commands = [];
 
@@ -348,6 +375,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
        'refreshBossCallouts',
        'Refresh the boss callouts',
        this.fetchLatestCallout.bind(this)
+     ));
+
+     this.commands.push(new Command(
+       'configure',
+       'Configure a one of the bot\'s settings',
+       this.configureSetting.bind(this),
+       ['ADMINISTRATOR']
      ));
   }
 
