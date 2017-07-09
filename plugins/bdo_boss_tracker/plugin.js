@@ -55,8 +55,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.LISTENER_CLIENT = new Discord.Client();
 
     this.REMOTE_GUILD_ID = "171908522269736969",
-    this.REMOTE_BOSS_TIMER_CHANNEL_ID: "246364525438173184",
-    this.REMOTE_BOSS_LIVE_CHANNEL_ID: "172146835656278016"
+    this.REMOTE_BOSS_TIMER_CHANNEL_ID = "246364525438173184",
+    this.REMOTE_BOSS_LIVE_CHANNEL_ID = "172146835656278016"
 
     this.GUILD_BOSS_TIMER_CHANNELS = null;    // Auto-populated by looking for a #boss_timer channel
     this.GUILD_BOSS_CALLOUTS_CHANNELS = null; // Auto-populated by looking for a #boss_callouts channel
