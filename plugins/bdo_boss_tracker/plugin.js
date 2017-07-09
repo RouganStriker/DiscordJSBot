@@ -144,7 +144,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.REMOTE_UPDATE_CHANNEL.fetchMessages()
       .then(messages => {
         const filteredMessages = messages.filter((message) => {
-           return message.author.id === this.IHAU_BOT_ID;
+           return message.author.bot;
         });
         if (filteredMessages.size > 0) {
           const new_callout = filteredMessages.first();
