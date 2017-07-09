@@ -137,7 +137,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         }
       } else if (author.id != this.LISTENER_CLIENT.user.id && !author.bot && channel.type == "dm") {
         // Auto-respond to non-bot direct messages
-        channel.sendMessage("You've caught me! I am actually a bot. For more information please message @rouganstriker#5241")
+        channel.send("You've caught me! I am actually a bot. For more information please message @rouganstriker#5241")
       }
     });
 
@@ -157,8 +157,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
       console.log("Channel no longer exists, pending purge from cache: " + channel.id);
       return;
     }
+    console.log(message);
 
-    channel.sendMessage(message).then(callback).catch(console.error);
+    if (message) {
+      channel.send(message).then(callback).catch(console.error);
+    }
   }
 
   queueTimerPageRefresh(new_update) {
@@ -320,12 +323,12 @@ class BDOBossTrackerPlugin extends BasePlugin {
         return;
       }
 
-      if (message.content.match(initRegex) || message.content.match(liveRegex)) {
-        //console.info("Relaying update: " + message.author.username + " - " + message.content);
-        this.REMOTE_UPDATE_CHANNEL.sendMessage(message.content)
-                                .then("Relayed update to IHANA")
-                                .catch("Failed to relay update to IHANA");
-      }
+//      if (message.content.match(initRegex) || message.content.match(liveRegex)) {
+//        //console.info("Relaying update: " + message.author.username + " - " + message.content);
+//        this.REMOTE_UPDATE_CHANNEL.send(message.content)
+//                                .then("Relayed update to IHANA")
+//                                .catch("Failed to relay update to IHANA");
+//      }
     });
   }
 
