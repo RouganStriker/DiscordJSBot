@@ -50,41 +50,19 @@ class ChannelUpdateLock {
 
 
 class BDOBossTrackerPlugin extends BasePlugin {
-  updateConfig(err, config) {
-    if (err) {
-      this.log(err).bind(this);
-      return;
-    }
-
-    if (config == null) {
-        // Load the default values into the DB
-        config = {
-          IHAU_GUILD_ID: "246230860645269504",
-          IHAU_BOT_ID: "299092132189175808",
-          IHAU_BOSS_TIMER_CHANNEL_ID: "250988763155660801",
-          IHAU_BOSS_LIVE_CHANNEL_ID: "250988782051000321"
-        };
-
-        this.configDB.insert(config, this.updateConfig.bind(this));
-      } else {
-        this.IHAU_GUILD_ID = config.IHAU_GUILD_ID;
-        this.IHAU_BOT_ID = config.IHAU_BOT_ID;
-        this.IHAU_BOSS_TIMER_CHANNEL_ID = config.IHAU_BOSS_TIMER_CHANNEL_ID;
-        this.IHAU_BOSS_LIVE_CHANNEL_ID = config.IHAU_BOSS_LIVE_CHANNEL_ID;
-      }
-  }
-
-  initDB() {
-    this.configDB = this.getDB('config');
-    this.configDB.findOne({}, this.updateConfig.bind(this));
-  }
 
   init() {
-    // Data is taken from the IHAU discord server
     this.LISTENER_CLIENT = new Discord.Client();
+
+    this.REMOTE_GUILD_ID = "171908522269736969",
+    this.REMOTE_BOSS_TIMER_CHANNEL_ID: "246364525438173184",
+    this.REMOTE_BOSS_LIVE_CHANNEL_ID: "172146835656278016"
+
     this.GUILD_BOSS_TIMER_CHANNELS = null;    // Auto-populated by looking for a #boss_timer channel
     this.GUILD_BOSS_CALLOUTS_CHANNELS = null; // Auto-populated by looking for a #boss_callouts channel
-    this.IHAU_UPDATE_CHANNEL = null;
+    this.REMOTE_UPDATE_CHANNEL = null;
+    this.REMOTE_TIMER_CHANNEL = null;
+
     this.initListener();
     this.initRelay();
     this.initCommands();
@@ -106,7 +84,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
   fetchLatestTimer() {
     // There is at most 1 message on the timer channel
-    this.IHAU_TIMER_CHANNEL.fetchMessages()
+    this.REMOTE_TIMER_CHANNEL.fetchMessages()
       .then(messages => {
         if (messages.size > 0) {
           const new_timer = messages.first().content;
@@ -118,7 +96,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
   fetchLatestCallout() {
     // The latest callout should be the latest post by the IHA Bot
-    this.IHAU_UPDATE_CHANNEL.fetchMessages()
+    this.REMOTE_UPDATE_CHANNEL.fetchMessages()
       .then(messages => {
         const filteredMessages = messages.filter((message) => {
            return message.author.id === this.IHAU_BOT_ID;
@@ -136,8 +114,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.fetchChannels();
     this.LISTENER_CLIENT.on('ready', () => {
       console.log(this.LISTENER_CLIENT.user.username + " user is ready");
-      this.IHAU_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', this.IHAU_BOSS_LIVE_CHANNEL_ID);
-      this.IHAU_TIMER_CHANNEL = this.LISTENER_CLIENT.channels.find('id', this.IHAU_BOSS_TIMER_CHANNEL_ID);
+      this.REMOTE_UPDATE_CHANNEL = this.LISTENER_CLIENT.channels.find('id', this.REMOTE_BOSS_LIVE_CHANNEL_ID);
+      this.REMOTE_TIMER_CHANNEL = this.LISTENER_CLIENT.channels.find('id', this.REMOTE_BOSS_TIMER_CHANNEL_ID);
 
       this.fetchLatestTimer();
     });
@@ -148,12 +126,12 @@ class BDOBossTrackerPlugin extends BasePlugin {
       const author = message.author;
       const channel = message.channel;
 
-      if (channel.type == "text" && guild.available && guild.id == this.IHAU_GUILD_ID && author.id == this.IHAU_BOT_ID) {
-        // Update from IHAU's bot
-        if (channel.id == this.IHAU_BOSS_TIMER_CHANNEL_ID) {
+      if (channel.type == "text" && guild.available && guild.id == this.REMOTE_GUILD_ID && author.bot) {
+        // Bot Update
+        if (channel.id == this.REMOTE_BOSS_TIMER_CHANNEL_ID) {
           // Boss Timer update
           this.queueTimerPageRefresh(message.content);
-        } else if (channel.id == this.IHAU_BOSS_LIVE_CHANNEL_ID) {
+        } else if (channel.id == this.REMOTE_BOSS_LIVE_CHANNEL_ID) {
           // Live updates
           this.queueLivePageRefresh(message);
         }
@@ -180,7 +158,6 @@ class BDOBossTrackerPlugin extends BasePlugin {
       return;
     }
 
-    //console.info("[" + channel.guild.name + "] " + log);
     channel.sendMessage(message).then(callback).catch(console.error);
   }
 
@@ -345,7 +322,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
       if (message.content.match(initRegex) || message.content.match(liveRegex)) {
         //console.info("Relaying update: " + message.author.username + " - " + message.content);
-        this.IHAU_UPDATE_CHANNEL.sendMessage(message.content)
+        this.REMOTE_UPDATE_CHANNEL.sendMessage(message.content)
                                 .then("Relayed update to IHANA")
                                 .catch("Failed to relay update to IHANA");
       }
