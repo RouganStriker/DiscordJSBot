@@ -87,12 +87,56 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.REMOTE_TIMER_CHANNEL.fetchMessages()
       .then(messages => {
         if (messages.size > 0) {
-          const new_timer = messages.first().content;
+          const new_timer = messages.first();
           this.queueTimerPageRefresh(new_timer);
         }
       })
       .catch(console.error);
   }
+
+  deleteMessageInChannel(channel, onSuccess, onError, filter = null) {
+    channel.fetchMessages()
+           .then(messages => {
+             if (messages.size > 1) {
+               channel.bulkDelete(channel.messages)
+                      .then(onSuccess)
+                      .catch(onError);
+             } else if (messages.size == 1) {
+               messages.first().delete()
+                               .then(onSuccess)
+                               .catch(onError);
+             } else {
+               performUpdate();
+             }
+          })
+          .catch(onError);
+  }
+
+  refreshTimerPage() {
+    const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
+    const timer_channels = availableTextChannels.findAll('name', "boss_timer");
+
+    // Unlock after we have updated every channel
+    this.timerUpdateLock.setLock(timer_channels.length);
+
+    timer_channels.forEach((channel) => {
+      const performUpdate = () => {
+        this.postToChannel(
+          channel,
+          this.lastTimerUpdate,
+          "Refreshing boss timer",
+          this.timerUpdateLock.unlock()
+        );
+      };
+      const handleError = (error) => {
+        this.timerUpdateLock.unlock();
+        console.error(error);
+      }
+
+      this.deleteMessageInChannel(channel, performUpdate, handleError);
+    });
+  }
+
 
   fetchLatestCallout() {
     // The latest callout should be the latest post by the IHA Bot
@@ -130,7 +174,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         // Bot Update
         if (channel.id == this.REMOTE_BOSS_TIMER_CHANNEL_ID) {
           // Boss Timer update
-          this.queueTimerPageRefresh(message.content);
+          this.queueTimerPageRefresh(message);
         } else if (channel.id == this.REMOTE_BOSS_LIVE_CHANNEL_ID) {
           // Live updates
           this.queueLivePageRefresh(message);
@@ -157,10 +201,15 @@ class BDOBossTrackerPlugin extends BasePlugin {
       console.log("Channel no longer exists, pending purge from cache: " + channel.id);
       return;
     }
-    console.log(message);
 
-    if (message) {
+    if (message.content) {
       channel.send(message).then(callback).catch(console.error);
+    } else if (message.embeds) {
+      for (var i=0; i < message.embeds.length; i++) {
+        const embed = new Discord.RichEmbed(message.embeds[i])
+        const _callback = i == message.embeds.length ? callback : null;
+        channel.send({embed}).then(_callback).catch(console.error);
+      }
     }
   }
 
@@ -170,48 +219,6 @@ class BDOBossTrackerPlugin extends BasePlugin {
     if (this.timerUpdateLock.getLock()) {
       this.refreshTimerPage();
     }
-  }
-
-  refreshTimerPage() {
-    const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
-    const timer_channels = availableTextChannels.findAll('name', "boss_timer");
-
-    // Unlock after we have updated every channel
-    this.timerUpdateLock.setLock(timer_channels.length);
-
-    timer_channels.forEach((channel) => {
-      const performUpdate = () => {
-        this.postToChannel(
-          channel,
-          this.lastTimerUpdate,
-          "Refreshing boss timer",
-          this.timerUpdateLock.unlock()
-        );
-      };
-      const handleError = (error) => {
-        this.timerUpdateLock.unlock();
-        console.error(error);
-      }
-
-      channel.fetchMessages()
-         .then(messages => {
-           if (messages.size > 1) {
-             channel.bulkDelete(channel.messages)
-                    .then(performUpdate)
-                    .catch(handleError);
-           } else if (messages.size == 1) {
-             messages.first().delete()
-                             .then(performUpdate)
-                             .catch(handleError);
-           } else {
-             performUpdate();
-           }
-        })
-        .catch((e) => {
-          this.timerUpdateLock.unlock();
-          console.error(handleError);
-        });
-    });
   }
 
   queueLivePageRefresh(new_update) {
