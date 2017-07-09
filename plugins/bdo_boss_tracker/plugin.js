@@ -57,6 +57,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.REMOTE_GUILD_ID = "171908522269736969";
     this.REMOTE_BOSS_TIMER_CHANNEL_ID = "246364525438173184";
     this.REMOTE_BOSS_LIVE_CHANNEL_ID = "172146835656278016";
+    this.REMOTE_BOSS_NOTIFICATION_CHANNEL_ID = "171931874350989312";
     this.REMOTE_BOT_ID = "249221836380962816";
 
     this.GUILD_BOSS_TIMER_CHANNELS = null;    // Auto-populated by looking for a #boss_timer channel
@@ -73,6 +74,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     this.lastTimerUpdate = '';
     this.timerUpdateLock = new ChannelUpdateLock();
+
   }
 
   fetchChannels() {
@@ -98,8 +100,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
   deleteMessageInChannel(channel, onSuccess, onError, filter = null) {
     channel.fetchMessages()
            .then(messages => {
+             if (filter) {
+               messages = messages.filter(filter);
+             }
              if (messages.size > 1) {
-               channel.bulkDelete(channel.messages)
+               channel.bulkDelete(messages)
                       .then(onSuccess)
                       .catch(onError);
              } else if (messages.size == 1) {
@@ -179,6 +184,17 @@ class BDOBossTrackerPlugin extends BasePlugin {
         } else if (channel.id == this.REMOTE_BOSS_LIVE_CHANNEL_ID) {
           // Live updates
           this.queueLivePageRefresh(message);
+        } else if (channel.id == this.REMOTE_BOSS_NOTIFICATION_CHANNEL_ID) {
+          // Spawn
+          const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
+          const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
+          callout_channels.forEach((channel) => {
+            this.postToChannel(
+              channel,
+              message.content,
+              "Refreshing live call-outs"
+            );
+          });
         }
       } else if (author.id != this.LISTENER_CLIENT.user.id && !author.bot && channel.type == "dm") {
         // Auto-respond to non-bot direct messages
@@ -225,19 +241,6 @@ class BDOBossTrackerPlugin extends BasePlugin {
   queueLivePageRefresh(new_update) {
     this.lastLiveUpdate = new_update;
 
-//    if (new_update.mentions.roles.size > 0) {
-//      // Boss call-out, post right away
-//      const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
-//      const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
-//      const postMessage = "@everyone " + new_update.cleanContent;
-//
-//      callout_channels.forEach((channel) => {
-//        this.postToChannel(
-//          channel,
-//          postMessage,
-//          "Refreshing live call-outs"
-//        );
-//      });
     if (this.liveUpdateLock.getLock()) {
       this.refreshLivePage();
     }
@@ -253,7 +256,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     // Fix the message
     if (new_update.attachments.length > 0) {
-      new_update.content = `${new_update.author.username}\n${new_update.attachments[0].url}`
+      new_update.content = `${new_update.attachments[0].url}`
     }
 
     callout_channels.forEach((channel) => {
@@ -268,9 +271,26 @@ class BDOBossTrackerPlugin extends BasePlugin {
       const handleError = (error) => {
         this.liveUpdateLock.unlock();
         console.error(error);
-      }
-      performUpdate()
-      //this.deleteMessageInChannel(channel, performUpdate, handleError);
+      };
+
+      const filter = (message) => {
+        if (message.id == "254105100111446016") {
+          // Leave help message alone
+          return false;
+        }
+        if (new_update.author.id == this.REMOTE_BOT_ID) {
+          // Delete all
+          return true;
+        }
+        if (new_update.author.bot && message.author.id == new_update.author.id) {
+          // Delete Old HP updates
+          return true;
+        }
+
+        return false;
+      };
+
+      this.deleteMessageInChannel(channel, performUpdate, handleError, filter);
     });
   }
 
