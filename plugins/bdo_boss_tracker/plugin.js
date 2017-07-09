@@ -204,7 +204,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     }
 
     if (message.content) {
-      channel.send(message).then(callback).catch(console.error);
+      channel.send(message.content).then(callback).catch(console.error);
     } else if (message.embeds) {
       for (var i=0; i < message.embeds.length; i++) {
         const embed = new Discord.RichEmbed(message.embeds[i])
@@ -269,7 +269,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         this.liveUpdateLock.unlock();
         console.error(error);
       }
-
+      performUpdate()
       //this.deleteMessageInChannel(channel, performUpdate, handleError);
     });
   }
