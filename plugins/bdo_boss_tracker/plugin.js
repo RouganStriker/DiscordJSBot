@@ -54,9 +54,10 @@ class BDOBossTrackerPlugin extends BasePlugin {
   init() {
     this.LISTENER_CLIENT = new Discord.Client();
 
-    this.REMOTE_GUILD_ID = "171908522269736969",
-    this.REMOTE_BOSS_TIMER_CHANNEL_ID = "246364525438173184",
-    this.REMOTE_BOSS_LIVE_CHANNEL_ID = "172146835656278016"
+    this.REMOTE_GUILD_ID = "171908522269736969";
+    this.REMOTE_BOSS_TIMER_CHANNEL_ID = "246364525438173184";
+    this.REMOTE_BOSS_LIVE_CHANNEL_ID = "172146835656278016";
+    this.REMOTE_BOT_ID = "249221836380962816";
 
     this.GUILD_BOSS_TIMER_CHANNELS = null;    // Auto-populated by looking for a #boss_timer channel
     this.GUILD_BOSS_CALLOUTS_CHANNELS = null; // Auto-populated by looking for a #boss_callouts channel
@@ -224,31 +225,36 @@ class BDOBossTrackerPlugin extends BasePlugin {
   queueLivePageRefresh(new_update) {
     this.lastLiveUpdate = new_update;
 
-    if (new_update.mentions.roles.size > 0) {
-      // Boss call-out, post right away
-      const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
-      const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
-      const postMessage = "@everyone " + new_update.cleanContent;
-
-      callout_channels.forEach((channel) => {
-        this.postToChannel(
-          channel,
-          postMessage,
-          "Refreshing live call-outs"
-        );
-      });
-    } else if (this.liveUpdateLock.getLock()) {
+//    if (new_update.mentions.roles.size > 0) {
+//      // Boss call-out, post right away
+//      const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
+//      const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
+//      const postMessage = "@everyone " + new_update.cleanContent;
+//
+//      callout_channels.forEach((channel) => {
+//        this.postToChannel(
+//          channel,
+//          postMessage,
+//          "Refreshing live call-outs"
+//        );
+//      });
+    if (this.liveUpdateLock.getLock()) {
       this.refreshLivePage();
     }
   }
 
   refreshLivePage() {
-    let new_update = this.lastLiveUpdate.cleanContent;
+    let new_update = this.lastLiveUpdate;
     const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
     const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
 
     // Unlock after we have updated every channel
     this.liveUpdateLock.setLock(callout_channels.length);
+
+    // Fix the message
+    if (new_update.attachments) {
+      new_update.content = "${new_update.author.username}\n${new_update.attachments[0].url}"
+    }
 
     callout_channels.forEach((channel) => {
       const performUpdate = () => {
@@ -264,35 +270,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         console.error(error);
       }
 
-      channel.fetchMessages({limit: 100})
-             .then(messages => {
-               let filtered_messages = null;
-
-               if (new_update.indexOf("Currently no Bosses alive") >= 0) {
-                 // Clear everything but the pinned messages
-                 filtered_messages = messages.filter((message) => {
-                   return !message.pinned;
-                 });
-               } else {
-                 filtered_messages = messages.filter((message) => {
-                   // Delete the bot's updates excluding the callouts
-                   return message.author.id === this.client.user.id && !message.mentions.everyone;
-                 });
-               }
-
-               if (filtered_messages != null && filtered_messages.size > 1) {
-                 channel.bulkDelete(filtered_messages)
-                        .then(performUpdate)
-                        .catch(handleError);
-               } else if (filtered_messages != null && filtered_messages.size == 1) {
-                 filtered_messages.first().delete()
-                                          .then(performUpdate)
-                                          .catch(handleError);
-               } else {
-                 performUpdate();
-               }
-            })
-            .catch(handleError);
+      //this.deleteMessageInChannel(channel, performUpdate, handleError);
     });
   }
 
