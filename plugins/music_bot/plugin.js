@@ -47,7 +47,6 @@ class MusicPlugin extends BasePlugin {
         console.error("[musicDB] 'playCount' field error : " + err);
       }
     });
-    });
 
     // Setup the config DB
     this.configDB = this.getDB('config');
@@ -80,8 +79,11 @@ class MusicPlugin extends BasePlugin {
       if (!this.AUTO_ADD_NEW_LINKS || message.channel.id != this.MUSIC_CHANNEL_ID) {
         return;
       }
+      const youtubeRegex = new RegExp('http(?:s?):\/\/(?:www\.)?youtu(?:be\.com\/watch\?v=|\.be\/)([\w\-\_]*)(&(amp;)?‌​[\w\?‌​=]*)?', 'i');
 
-      this.log(`Got new message ${message.content}`).bind(this);
+      if (message.content.match(youtubeRegex)) {
+        this.log(`Got new message ${message.content}`).bind(this);
+      }
     });
   }
 
