@@ -106,7 +106,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
                                .then(onSuccess)
                                .catch(onError);
              } else {
-               performUpdate();
+               onSuccess();
              }
           })
           .catch(onError);
