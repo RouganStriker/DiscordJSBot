@@ -227,6 +227,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
         const _callback = i == message.embeds.length ? callback : null;
         channel.send({embed}).then(_callback).catch(console.error);
       }
+    } else {
+      channel.send(message).then(callback).catch(console.error);
     }
   }
 
@@ -255,8 +257,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.liveUpdateLock.setLock(callout_channels.length);
 
     // Fix the message
-    if (new_update.attachments.length > 0) {
-      new_update.content = `${new_update.attachments[0].url}`
+    if (new_update.attachments.size > 0) {
+      const new_embed = new Discord.RichEmbed();
+      new_embed.setTitle(new_update.author.username.split('-')[0]);
+      new_embed.setImage(new_update.attachments.first().url);
+      new_update.embed.push(new_embed);
     }
 
     callout_channels.forEach((channel) => {
@@ -278,11 +283,14 @@ class BDOBossTrackerPlugin extends BasePlugin {
           // Leave help message alone
           return false;
         }
+        if (message.mentions.everyone) {
+          return false;
+        }
         if (new_update.author.id == this.REMOTE_BOT_ID) {
           // Delete all
           return true;
         }
-        if (new_update.author.bot && message.author.id == new_update.author.id) {
+        if (new_update.embed.size > 0 && message.embed.size > 0 && new_update.embed.first().title == message.embed.first().title) {
           // Delete Old HP updates
           return true;
         }
