@@ -252,8 +252,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.liveUpdateLock.setLock(callout_channels.length);
 
     // Fix the message
-    if (new_update.attachments) {
-      new_update.content = "${new_update.author.username}\n${new_update.attachments[0].url}"
+      new_update.content = `${new_update.author.username}\n${new_update.attachments[0].url}`
     }
 
     callout_channels.forEach((channel) => {
