@@ -241,6 +241,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
   }
 
   queueLivePageRefresh(new_update) {
+    if (new_update.author.id == this.REMOTE_BOT_ID && new_update.content.mentions.users.size > 0) {
+      // Bot is responding to somoene, ignore these
+      return;
+    }
+
     this.lastLiveUpdate = new_update;
 
     if (this.liveUpdateLock.getLock()) {
@@ -261,7 +266,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
       const new_embed = new Discord.RichEmbed();
       new_embed.setTitle(new_update.author.username.split('-')[0]);
       new_embed.setImage(new_update.attachments.first().url);
-      new_update.embed.push(new_embed);
+      new_update.embeds.push(new_embed);
     }
 
     callout_channels.forEach((channel) => {
@@ -287,10 +292,15 @@ class BDOBossTrackerPlugin extends BasePlugin {
           return false;
         }
         if (new_update.author.id == this.REMOTE_BOT_ID) {
-          // Delete all
-          return true;
+          const boss_names = ["karanda", "kzarka"];
+          const boss_regex = new RegExp('(' + boss_names.join('|') + ')', 'i');
+          const found_boss = boss_regex.exec(new_update.content);
+
+          if (found_boss.length > 0 &&  message.embeds.size > 0 && message.embeds[message.embeds.length-1].title.match(new RegExp(found_boss[0], 'i'))) {
+            return true
+          }
         }
-        if (new_update.embed.size > 0 && message.embed.size > 0 && new_update.embed.first().title == message.embed.first().title) {
+        if (new_update.embeds.size > 0 && message.embeds.size > 0 && new_update.embeds[0].title == message.embeds[message.embeds.length-1].title) {
           // Delete Old HP updates
           return true;
         }
