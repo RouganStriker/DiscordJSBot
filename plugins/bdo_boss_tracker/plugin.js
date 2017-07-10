@@ -300,7 +300,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
             return true
           }
         }
-        if (new_update.embeds.size > 0 && message.embeds.size > 0 && new_update.embeds[0].title == message.embeds[message.embeds.length-1].title) {
+        if (new_update.embeds.size > 0 && message.embeds.size > 0 && new_update.embeds[0].title.trim() == message.embeds[message.embeds.length-1].title.trim()) {
           // Delete Old HP updates
           return true;
         }
