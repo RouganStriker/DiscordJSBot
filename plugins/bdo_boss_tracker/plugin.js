@@ -413,6 +413,15 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
 
     this.client.on('messageDelete', message => {
+      const {
+        author,
+        channel
+      } = message;
+
+      if (author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(channel)) {
+        return;
+      }
+
       if (this.callout_message_cache[message.channel.id]) {
         Object.keys(this.callout_message_cache[message.channel.id]).forEach(boss_name => {
           if (this.callout_message_cache[message.channel.id][message.id][boss_name].id == message.id) {
@@ -424,6 +433,15 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
 
     this.client.on('messageDeleteBulk', messages => {
+      const {
+        author,
+        channel
+      } = message;
+
+      if (author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(channel)) {
+        return;
+      }
+
       messages.forEach(message => {
         if (this.callout_message_cache[message.channel.id]) {
           Object.keys(this.callout_message_cache[message.channel.id]).forEach(boss_name => {
