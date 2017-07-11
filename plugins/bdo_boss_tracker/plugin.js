@@ -67,6 +67,17 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     // Cache callout messages
     this.callout_message_cache = {};
+    this.boss_name_mapping = {
+      "kutum": "Kutum",
+      "karanda": "Karanda",
+      "kzarka": "Kzarka",
+      "bheg": "Bheg",
+      "mudster": "Giant Mudster",
+      "tree": "Dim Tree",
+      "rednose": "Red Nose",
+      "nouver": "Nouver"
+    }
+
     this.BOSS_NAMES = ["kutum", "karanda", "kzarka", "bheg", "mudster", "tree", "rednose", "nouver"];
 
     this.initListener();
@@ -278,7 +289,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
       boss_name = new_update.attachments.first().filename.split('.')[0].toLowerCase();
 
       new_embed = new Discord.RichEmbed();
-      new_embed.setTitle(new_update.author.username.split('-')[0]);
+      new_embed.setTitle(this.boss_name_mapping[boss_name]);
       new_embed.setImage(new_update.attachments.first().url);
       new_update.embeds.push(new_embed);
     }
@@ -292,7 +303,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
          // Find message to update
          if (boss_name) {
             const cached_message = this.callout_message_cache[channel.id][boss_name];
-            const message_content = `@everyone ${boss_name} has spawned`;
+            const message_content = `@everyone ${this.boss_name_mapping[boss_name]} has spawned`;
 
             if (cached_message) {
               cached_message.edit(message_content, {embed: new_embed})
