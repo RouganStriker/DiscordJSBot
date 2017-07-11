@@ -413,9 +413,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
 
     this.client.on('messageDelete', message => {
-      if (this.callout_message_cache[message.channel.id] && this.callout_message_cache[message.channel.id][message.id]) {
-        // This message was cached
-        this.callout_message_cache[message.channel.id][message.id] = null;
+      if (this.callout_message_cache[message.channel.id]) {
+        Object.keys(this.callout_message_cache[message.channel.id]).forEach(boss_name => {
+          if (this.callout_message_cache[message.channel.id][message.id][boss_name].id == message.id) {
+            // This message was cached
+            this.callout_message_cache[message.channel.id][message.id] = null;
+          }
+        });
       }
     });
   }
