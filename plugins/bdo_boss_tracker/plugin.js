@@ -309,7 +309,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
             if (cached_message) {
               cached_message.edit(message_content, {embed: new_embed})
                             .then(postHPUpdate)
-                            .catch(console.error);
+                            .catch((error) => {
+                              console.log(error);
+                              // Clear the cached message
+                              this.callout_message_cache[channel.id][boss_name] = null;
+                            });
             } else {
               channel.fetchMessages().then(messages => {
                 const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[0].title == nice_boss_name);
