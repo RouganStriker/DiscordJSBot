@@ -329,14 +329,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
                 }
               }).catch(console.error);
             }
-         } else {
-           this.postToChannel(
-             channel,
-             this.lastLiveUpdate,
-             "Refreshing live updates",
-             this.liveUpdateLock.unlock()
-           );
          }
+         // Nothing to post
       };
       const handleError = (error) => {
         this.liveUpdateLock.unlock();
@@ -354,7 +348,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
         }
         if (new_update.author.id == this.REMOTE_BOT_ID) {
           // Check for boss dead message
-          const boss_names = ["karanda", "kzarka", "kutum", "tree", "rednose", "nouver", "bheg", "mudster"];
+          const boss_names = Object.values(this.boss_name_mapping);
           const boss_regex = new RegExp('(' + boss_names.join('|') + ')', 'i');
           const found_boss = boss_regex.exec(new_update.content);
 
