@@ -411,6 +411,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
 //                                .catch("Failed to relay update to IHANA");
 //      }
     });
+
+    this.client.on('messageDelete', message => {
+      if (this.callout_message_cache[message.channel.id] && this.callout_message_cache[message.channel.id][message.id]) {
+        // This message was cached
+        this.callout_message_cache[message.channel.id][message.id] = null;
+      }
+    });
   }
 
   configureSetting(message) {
@@ -425,6 +432,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
   clearBossCallouts(message) {
     const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
     const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
+    this.callout_message_cache = {};
 
     callout_channels.forEach(channel => {
       const filter = (message => {
