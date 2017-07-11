@@ -65,6 +65,10 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.REMOTE_UPDATE_CHANNEL = null;
     this.REMOTE_TIMER_CHANNEL = null;
 
+    // Cache callout messages
+    this.callout_message_cache = {};
+    this.BOSS_NAMES = ["kutum", "karanda", "kzarka", "bheg", "mudster", "tree", "rednose", "nouver"];
+
     this.initListener();
     this.initRelay();
     this.initCommands();
@@ -75,9 +79,6 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.lastTimerUpdate = '';
     this.timerUpdateLock = new ChannelUpdateLock();
 
-    // Cache callout messages
-    this.callout_message_cache = {};
-    this.BOSS_NAMES = ["kutum", "karanda", "kzarka", "bheg", "mudster", "tree", "rednose", "nouver"];
   }
 
   fetchChannels() {
