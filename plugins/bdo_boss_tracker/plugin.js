@@ -284,26 +284,39 @@ class BDOBossTrackerPlugin extends BasePlugin {
     }
 
     callout_channels.forEach((channel) => {
+      const postHPUpdate = (message) => {
+        this.callout_message_cache[channel.id][boss_name] = message;
+        this.liveUpdateLock.unlock();
+      };
       const performUpdate = () => {
          // Find message to update
          if (boss_name) {
             const cached_message = this.callout_message_cache[channel.id][boss_name];
 
             if (cached_message) {
-              cached_message.edit({embed: new_embed});
+              cached_message.edit({embed: new_embed})
+                            .then(postHPUpdate)
+                            .catch(console.error);
             } else {
               const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
 
               if (existing_message) {
                 existing_message.edit({embed: new_embed})
-                              .then(message => this.callout_message_cache[channel.id][boss_name] = message)
-                              .catch(console.error);
+                                .then(postHPUpdate)
+                                .catch(console.error);
               } else {
                 channel.send(`@everyone ${boss_name} has spawned`, {embed: new_embed})
-                       .then(message => this.callout_message_cache[channel.id][boss_name] = message)
+                       .then(postHPUpdate)
                        .catch(console.error);
               }
             }
+         } else {
+           this.postToChannel(
+             channel,
+             this.lastLiveUpdate,
+             "Refreshing live updates",
+             this.liveUpdateLock.unlock()
+           );
          }
       };
       const handleError = (error) => {
