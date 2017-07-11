@@ -413,12 +413,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
 
     this.client.on('messageDelete', message => {
-      const {
-        author,
-        channel
-      } = message;
-
-      if (author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(channel)) {
+      if (message.author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(message.channel)) {
         return;
       }
 
@@ -434,7 +429,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     this.client.on('messageDeleteBulk', messages => {
       messages.forEach(message => {
-        if (author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(channel)) {
+        if (message.author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(message.channel)) {
           return;
         }
 
