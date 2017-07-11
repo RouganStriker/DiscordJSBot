@@ -75,6 +75,9 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.lastTimerUpdate = '';
     this.timerUpdateLock = new ChannelUpdateLock();
 
+    // Cache callout messages
+    this.callout_message_cache = {};
+    this.BOSS_NAMES = ["kutum", "karanda", "kzarka", "bheg", "mudster", "tree", "rednose", "nouver"];
   }
 
   fetchChannels() {
@@ -83,6 +86,11 @@ class BDOBossTrackerPlugin extends BasePlugin {
     this.GUILD_BOSS_CALLOUTS_CHANNELS = availableTextChannels.findAll('name', "boss_callouts");
     console.log("Found " + this.GUILD_BOSS_TIMER_CHANNELS.length + " timer channels");
     console.log("Found " + this.GUILD_BOSS_CALLOUTS_CHANNELS.length + " callout channels");
+
+    // Build cache for callouts
+    this.GUILD_BOSS_CALLOUTS_CHANNELS.forEach(channel => {
+      this.callout_message_cache[channel.id] = {};
+    });
   }
 
   fetchLatestTimer() {
@@ -241,7 +249,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
   }
 
   queueLivePageRefresh(new_update) {
-    if (new_update.author.id == this.REMOTE_BOT_ID && new_update.content.mentions.users.size > 0) {
+    if (new_update.author.id == this.REMOTE_BOT_ID && new_update.mentions.users.size > 0) {
       // Bot is responding to somoene, ignore these
       return;
     }
@@ -257,13 +265,18 @@ class BDOBossTrackerPlugin extends BasePlugin {
     let new_update = this.lastLiveUpdate;
     const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
     const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
+    var new_embed = null;
+    var boss_name = null;
 
     // Unlock after we have updated every channel
     this.liveUpdateLock.setLock(callout_channels.length);
 
     // Fix the message
     if (new_update.attachments.size > 0) {
-      const new_embed = new Discord.RichEmbed();
+      // Get bossname from filename. e.g. Kutum.png
+      boss_name = new_update.attachments.first().filename.split('.')[0].toLowerCase();
+
+      new_embed = new Discord.RichEmbed();
       new_embed.setTitle(new_update.author.username.split('-')[0]);
       new_embed.setImage(new_update.attachments.first().url);
       new_update.embeds.push(new_embed);
@@ -288,19 +301,21 @@ class BDOBossTrackerPlugin extends BasePlugin {
           // Leave help message alone
           return false;
         }
-        if (message.mentions.everyone) {
-          return false;
+        if (!message.author.bot) {
+          // Clear messages posted by people
+          return true;
         }
         if (new_update.author.id == this.REMOTE_BOT_ID) {
-          const boss_names = ["karanda", "kzarka"];
+          // Check for boss dead message
+          const boss_names = ["karanda", "kzarka", "kutum", "tree", "rednose", "nouver", "bheg", "mudster"];
           const boss_regex = new RegExp('(' + boss_names.join('|') + ')', 'i');
           const found_boss = boss_regex.exec(new_update.content);
 
-          if (found_boss.length > 0 &&  message.embeds.size > 0 && message.embeds[message.embeds.length-1].title.match(new RegExp(found_boss[0], 'i'))) {
+          if (found_boss &&  message.embeds.length > 0 && message.embeds[message.embeds.length-1].title.match(new RegExp(found_boss[0], 'i'))) {
             return true
           }
         }
-        if (new_update.embeds.size > 0 && message.embeds.size > 0 && new_update.embeds[0].title.trim() == message.embeds[message.embeds.length-1].title.trim()) {
+        if (new_update.embeds.length > 0 && message.embeds.length > 0 && new_update.embeds[0].title.trim() == message.embeds[message.embeds.length-1].title.trim()) {
           // Delete Old HP updates
           return true;
         }
@@ -308,6 +323,27 @@ class BDOBossTrackerPlugin extends BasePlugin {
         return false;
       };
 
+      // Find message to update
+      if (boss_name) {
+        const cached_message = this.callout_message_cache[channel.id][boss_name];
+
+        if (cached_message) {
+          cached_message.edit({embed: new_embed});
+        } else {
+          cached_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
+
+          if (cached_message) {
+            this.callout_message_cache[channel.id][boss_name] = cached_message;
+            cached_message.edit({embed: new_embed})
+                          .then(message => this.callout_message_cache[channel.id][boss_name] = message)
+                          .catch(console.error);
+          } else {
+            channel.send(`@everyone ${boss_name} has spawned`, {embed: new_embed})
+                   .then(message => this.callout_message_cache[channel.id][boss_name] = message)
+                   .catch(console.error);
+          }
+        }
+      }
       this.deleteMessageInChannel(channel, performUpdate, handleError, filter);
     });
   }
