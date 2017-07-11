@@ -285,12 +285,26 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     callout_channels.forEach((channel) => {
       const performUpdate = () => {
-        this.postToChannel(
-          channel,
-          new_update,
-          "Refreshing live call-outs",
-          this.liveUpdateLock.unlock()
-        );
+         // Find message to update
+         if (boss_name) {
+            const cached_message = this.callout_message_cache[channel.id][boss_name];
+
+            if (cached_message) {
+              cached_message.edit({embed: new_embed});
+            } else {
+              const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
+
+              if (existing_message) {
+                existing_message.edit({embed: new_embed})
+                              .then(message => this.callout_message_cache[channel.id][boss_name] = message)
+                              .catch(console.error);
+              } else {
+                channel.send(`@everyone ${boss_name} has spawned`, {embed: new_embed})
+                       .then(message => this.callout_message_cache[channel.id][boss_name] = message)
+                       .catch(console.error);
+              }
+            }
+         }
       };
       const handleError = (error) => {
         this.liveUpdateLock.unlock();
@@ -324,26 +338,6 @@ class BDOBossTrackerPlugin extends BasePlugin {
         return false;
       };
 
-      // Find message to update
-      if (boss_name) {
-        const cached_message = this.callout_message_cache[channel.id][boss_name];
-
-        if (cached_message) {
-          cached_message.edit({embed: new_embed});
-        } else {
-          const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
-
-          if (existing_message) {
-            existing_message.edit({embed: new_embed})
-                          .then(message => this.callout_message_cache[channel.id][boss_name] = message)
-                          .catch(console.error);
-          } else {
-            channel.send(`@everyone ${boss_name} has spawned`, {embed: new_embed})
-                   .then(message => this.callout_message_cache[channel.id][boss_name] = message)
-                   .catch(console.error);
-          }
-        }
-      }
       this.deleteMessageInChannel(channel, performUpdate, handleError, filter);
     });
   }
