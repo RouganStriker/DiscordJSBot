@@ -303,7 +303,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
          // Find message to update
          if (boss_name) {
             const cached_message = this.callout_message_cache[channel.id][boss_name];
-            const message_content = `@everyone ${this.boss_name_mapping[boss_name]} has spawned`;
+            const nice_boss_name = this.boss_name_mapping[boss_name];
+            const message_content = `@everyone ${nice_boss_name} has spawned`;
 
             if (cached_message) {
               cached_message.edit(message_content, {embed: new_embed})
@@ -311,7 +312,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
                             .catch(console.error);
             } else {
               channel.fetchMessages().then(messages => {
-                const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
+                const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[0].title == nice_boss_name);
 
                 if (existing_message) {
                   existing_message.edit(message_content, {embed: new_embed})
@@ -339,8 +340,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
       };
 
       const filter = (message) => {
-        if (message.id == "254105100111446016") {
-          // Leave help message alone
+        if (message.pinned) {
+          // Leave pinned messages alone
           return false;
         }
         if (!message.author.bot) {
@@ -417,6 +418,19 @@ class BDOBossTrackerPlugin extends BasePlugin {
     }
   }
 
+  clearBossCallouts(message) {
+    const availableTextChannels = this.client.channels.filter((c) => c.type == "text");
+    const callout_channels = availableTextChannels.findAll('name', "boss_callouts");
+
+    callout_channels.forEach(channel => {
+      const filter = (message => {
+        // Ignore pinned messages
+        return !message.pinned;
+      });
+      this.deleteMessageInChannel(channel, () => {}, console.error, filter);
+    });
+  }
+
   initCommands() {
     /*
      *  BDO boss tracker related commands
@@ -442,6 +456,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
        'configure',
        'Configure a one of the bot\'s settings',
        this.configureSetting.bind(this),
+       ['ADMINISTRATOR']
+     ));
+
+     this.commands.push(new Command(
+       'clearBossCallouts',
+       'Purge old callout messages on this channel',
+       this.clearBossCallouts.bind(this),
        ['ADMINISTRATOR']
      ));
   }
