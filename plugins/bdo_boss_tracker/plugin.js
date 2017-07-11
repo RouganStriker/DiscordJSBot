@@ -331,11 +331,10 @@ class BDOBossTrackerPlugin extends BasePlugin {
         if (cached_message) {
           cached_message.edit({embed: new_embed});
         } else {
-          cached_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
+          const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
 
-          if (cached_message) {
-            this.callout_message_cache[channel.id][boss_name] = cached_message;
-            cached_message.edit({embed: new_embed})
+          if (existing_message) {
+            existing_message.edit({embed: new_embed})
                           .then(message => this.callout_message_cache[channel.id][boss_name] = message)
                           .catch(console.error);
           } else {
