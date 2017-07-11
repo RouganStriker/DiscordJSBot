@@ -310,17 +310,19 @@ class BDOBossTrackerPlugin extends BasePlugin {
                             .then(postHPUpdate)
                             .catch(console.error);
             } else {
-              const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
+              channel.fetchMessages().then(messages => {
+                const existing_message = channel.messages.find(message => message.embeds.length > 0 && message.embeds[message.embeds.length-1].title == boss_name);
 
-              if (existing_message) {
-                existing_message.edit(message_content, {embed: new_embed})
-                                .then(postHPUpdate)
-                                .catch(console.error);
-              } else {
-                channel.send(message_content, {embed: new_embed})
-                       .then(postHPUpdate)
-                       .catch(console.error);
-              }
+                if (existing_message) {
+                  existing_message.edit(message_content, {embed: new_embed})
+                                  .then(postHPUpdate)
+                                  .catch(console.error);
+                } else {
+                  channel.send(message_content, {embed: new_embed})
+                         .then(postHPUpdate)
+                         .catch(console.error);
+                }
+              }).catch(console.error);
             }
          } else {
            this.postToChannel(
