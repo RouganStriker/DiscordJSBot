@@ -117,5 +117,10 @@ client.on('error', (error) => {
   console.error(error);
 });
 
-client.login(process.env.DISCORD_BOT_TOKEN)
-      .catch((reason) => console.log);
+client.on('disconnect', (error) => {
+  console.warn("Discord Bot disconnected, starting reconnect...");
+  console.error(error);
+  client.login(process.env.DISCORD_BOT_TOKEN).catch(console.error);
+})
+
+client.login(process.env.DISCORD_BOT_TOKEN).catch(console.error);

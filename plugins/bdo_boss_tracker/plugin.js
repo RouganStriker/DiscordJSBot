@@ -230,7 +230,13 @@ class BDOBossTrackerPlugin extends BasePlugin {
       console.error(error);
     });
 
-    this.LISTENER_CLIENT.login(process.env.BDO_BOSS_TRACKER_LISTENER_TOKEN);
+    this.LISTENER_CLIENT.on('disconnect', (error) => {
+      console.warn("Listener Disconnected");
+      console.error(error);
+      this.LISTENER_CLIENT.login(process.env.BDO_BOSS_TRACKER_LISTENER_TOKEN).catch(console.error);
+    });
+
+    this.LISTENER_CLIENT.login(process.env.BDO_BOSS_TRACKER_LISTENER_TOKEN).catch(console.error);
   }
 
   postToChannel(channel, message, log, callback) {
@@ -299,6 +305,12 @@ class BDOBossTrackerPlugin extends BasePlugin {
         this.callout_message_cache[channel.id][boss_name] = message;
         this.liveUpdateLock.unlock();
       };
+
+      const handleError = (error) => {
+        this.liveUpdateLock.unlock();
+        console.error(error);
+      };
+
       const performUpdate = () => {
          // Find message to update
          if (boss_name) {
@@ -310,8 +322,8 @@ class BDOBossTrackerPlugin extends BasePlugin {
               cached_message.edit(message_content, {embed: new_embed})
                             .then(postHPUpdate)
                             .catch((error) => {
-                              console.log(error);
-                              // Clear the cached message
+                              // Clear the cached message, it is probably outdated
+                              handleError(error);
                               this.callout_message_cache[channel.id][boss_name] = null;
                             });
             } else {
@@ -321,20 +333,17 @@ class BDOBossTrackerPlugin extends BasePlugin {
                 if (existing_message) {
                   existing_message.edit(message_content, {embed: new_embed})
                                   .then(postHPUpdate)
-                                  .catch(console.error);
+                                  .catch(handleError);
                 } else {
                   channel.send(message_content, {embed: new_embed})
                          .then(postHPUpdate)
-                         .catch(console.error);
+                         .catch(handleError);
                 }
-              }).catch(console.error);
+              }).catch(handleError);
             }
+         } else {
+           this.liveUpdateLock.unlock();
          }
-         // Nothing to post
-      };
-      const handleError = (error) => {
-        this.liveUpdateLock.unlock();
-        console.error(error);
       };
 
       const filter = (message) => {
@@ -348,11 +357,20 @@ class BDOBossTrackerPlugin extends BasePlugin {
         }
         if (new_update.author.id == this.REMOTE_BOT_ID) {
           // Check for boss dead message
-          const boss_names = Object.values(this.boss_name_mapping);
+          const boss_names = Object.keys(this.boss_name_mapping);
           const boss_regex = new RegExp('(' + boss_names.join('|') + ')', 'i');
           const found_boss = boss_regex.exec(new_update.content);
+          const dead_boss_name = null;
+          const message_title = null;
 
-          if (found_boss &&  message.embeds.length > 0 && message.embeds[message.embeds.length-1].title.match(new RegExp(found_boss[0], 'i'))) {
+          if (found_boss) {
+            dead_boss_name = this.boss_name_mapping[found_boss[0].toLowerCase()];
+          }
+          if (message.embeds.length > 0) {
+            message_title =  message.embeds[message.embeds.length-1].title;
+          }
+
+          if (dead_boss_name && message_title && message_title.match(new RegExp(dead_boss_name], 'i'))) {
             return true
           }
         }
@@ -407,15 +425,15 @@ class BDOBossTrackerPlugin extends BasePlugin {
     });
 
     this.client.on('messageDelete', message => {
-      if (message.author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(message.channel)) {
+      if (message.author != this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(message.channel)) {
         return;
       }
 
       if (this.callout_message_cache[message.channel.id]) {
         Object.keys(this.callout_message_cache[message.channel.id]).forEach(boss_name => {
-          if (this.callout_message_cache[message.channel.id][message.id][boss_name].id == message.id) {
+          if (this.callout_message_cache[message.channel.id][boss_name] == message.id) {
             // This message was cached
-            this.callout_message_cache[message.channel.id][message.id] = null;
+            this.callout_message_cache[message.channel.id][boss_name] = null;
           }
         });
       }
@@ -423,15 +441,15 @@ class BDOBossTrackerPlugin extends BasePlugin {
 
     this.client.on('messageDeleteBulk', messages => {
       messages.forEach(message => {
-        if (message.author === this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(message.channel)) {
+        if (message.author != this.client.user || !this.GUILD_BOSS_CALLOUTS_CHANNELS.includes(message.channel)) {
           return;
         }
 
         if (this.callout_message_cache[message.channel.id]) {
           Object.keys(this.callout_message_cache[message.channel.id]).forEach(boss_name => {
-            if (this.callout_message_cache[message.channel.id][message.id][boss_name].id == message.id) {
+            if (this.callout_message_cache[message.channel.id][boss_name] == message.id) {
               // This message was cached
-              this.callout_message_cache[message.channel.id][message.id] = null;
+              this.callout_message_cache[message.channel.id][boss_name] = null;
             }
           });
         }
