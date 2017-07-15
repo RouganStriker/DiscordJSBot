@@ -370,7 +370,7 @@ class BDOBossTrackerPlugin extends BasePlugin {
             message_title =  message.embeds[message.embeds.length-1].title;
           }
 
-          if (dead_boss_name && message_title && message_title.match(new RegExp(dead_boss_name], 'i'))) {
+          if (dead_boss_name && message_title && message_title.match(new RegExp(dead_boss_name, 'i'))) {
             return true
           }
         }
